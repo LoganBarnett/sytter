@@ -1,0 +1,99 @@
+#+title:     Sytter
+#+author:    Logan Barnett-Hoy
+#+email:     logustus@gmail.com
+#+date:      <2023-04-11 Tue>
+#+language:  en
+#+file_tags:
+#+tags:
+
+Here be dragons!
+
+A baby sitter for your computer system.
+
+Provides a platform for watching your host and performing any corrective actions
+you wish.
+
+Runs natively.
+
+** Configuration Examples
+
+*** Restart Runaway Processes
+
+Sometimes you'll see some process that eats up loads of resources. One such
+example is =com.apple.safari.History=. We need to move aside the history files
+and restart the service (really just kill the service).
+
+#+begin_src toml :results none
+name = "History de-peg"
+description = "Sometimes com.apple.safari.History eats a full CPU. Move SQLite
+DB files and kill the process."
+
+[watch]
+# Some plugins will allow special watch condtions such as this, but generally
+# will be shell invocations.
+process = "com.apple.safari.History"
+resource = "cpu"
+condition = "cpu > 90%"
+duration = "5m"
+
+[execute]
+shell = "mkdir -p ~/Library/Safari/old-history &&
+mv ~/Library/Safari/History* ~/Library/Safari/old-history &&
+kill -9 $(pgrep com.apple.Safari.History)
+"
+
+[failure]
+shell = "mail -s 'History is pegged but remediation failed' $USER < $errFile"
+#+end_src
+
+*** Show VPN Connection Status in the Prompt
+
+#+begin_src toml :results none
+name = "Show VPN Connection Status"
+description = "Check if we're connected to the VPN and record it for use in our prompt."
+
+[watch]
+trigger = "stdout"
+# Some arbitrary executable that prints to stdout when the network interface
+# changes.
+exec = "interface-changed 'utun*'"
+# Pass the stdout to this handler. Sets $sytter_state for use in our [execute]
+# section based on what we see from the stdout.
+state = "grep added && echo 'online' || echo 'offline'"
+
+[execute]
+shell = "echo \"$sytter_state\" > ~/.vpn-status"
+
+[failure]
+# This goes to a ~/.sytter-failures and ensures a unique account of this one
+# sytter.
+list-failure = true
+#+end_src
+
+
+*** Authenticate in a captive portal and =sendmail= errors
+
+Let's say =$WORK= has some weird network segmentation policy in effect, and you
+can only communicate with hosts if you're authenticated via a "captive portal"
+system. Since this is =$WORK= you also have to be on the VPN for it to be
+relevant. If there is a failure, use =sendmail= to send it. We only need one
+email per error.
+
+#+begin_src toml :results none
+name = "Captive Portal Authentication"
+description = "Periodically authenticate via Captive Portal when on the VPN."
+
+[watch]
+cron = "5 * * * *"
+exec = "[[ \"$(cat $VPN_FILE)\" == true ]]"
+
+[execute]
+shell = "~/bin/captivate.sh"
+
+[failure]
+repeat = false
+shell = "printf '%s\n' 'Subject: Capitive Portal auth failed' \
+        '' \
+        'Captive Portal authentication is failing! See $LOG for details.' \
+| sendmail $USER"
+#+end_src
