@@ -17,6 +17,14 @@ Runs natively.
 
 ** Configuration Examples
 
+Configuration consists of a series of TOML files - each file represents a
+"sytter". A sytter watches some particular aspect of the host and performs
+operations based on changes to what the sytter observes. This can be used to
+automate remediation or track the status of something.
+
+Most operations here are shell operations, but Sytter will allow plugins that
+make some operations incredibly easy.
+
 *** Restart Runaway Processes
 
 Sometimes you'll see some process that eats up loads of resources. One such
@@ -48,6 +56,10 @@ shell = "mail -s 'History is pegged but remediation failed' $USER < $errFile"
 
 *** Show VPN Connection Status in the Prompt
 
+Using a contrived =interface-changed= executable, track the status of VPN
+connectivity with an event listener.  Your prompt will need to poll
+=~/.vpn-status= to determine what to display.
+
 #+begin_src toml :results none
 name = "Show VPN Connection Status"
 description = "Check if we're connected to the VPN and record it for use in our prompt."
@@ -71,13 +83,14 @@ list-failure = true
 #+end_src
 
 
+
 *** Authenticate in a captive portal and =sendmail= errors
 
 Let's say =$WORK= has some weird network segmentation policy in effect, and you
 can only communicate with hosts if you're authenticated via a "captive portal"
 system. Since this is =$WORK= you also have to be on the VPN for it to be
 relevant. If there is a failure, use =sendmail= to send it. We only need one
-email per error.
+email per consecutive error.
 
 #+begin_src toml :results none
 name = "Captive Portal Authentication"
