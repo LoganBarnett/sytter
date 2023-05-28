@@ -15,6 +15,8 @@ you wish.
 
 Runs natively.
 
+* The Tour
+
 ** Configuration Examples
 
 Configuration consists of a series of TOML files - each file represents a
@@ -40,8 +42,9 @@ DB files and kill the process."
 # Some plugins will allow special watch condtions such as this, but generally
 # will be shell invocations.
 process = "com.apple.safari.History"
-resource = "cpu"
-condition = "cpu > 90%"
+
+[condition]
+process_resources = "cpu > 90%"
 duration = "5m"
 
 [execute]
@@ -98,7 +101,9 @@ description = "Periodically authenticate via Captive Portal when on the VPN."
 
 [watch]
 cron = "5 * * * *"
-exec = "[[ \"$(cat $VPN_FILE)\" == true ]]"
+
+[condition]
+shell = "[[ \"$(cat $VPN_FILE)\" == true ]]"
 
 [execute]
 shell = "~/bin/captivate.sh"
@@ -110,3 +115,42 @@ shell = "printf '%s\n' 'Subject: Capitive Portal auth failed' \
         'Captive Portal authentication is failing! See $LOG for details.' \
 | sendmail $USER"
 #+end_src
+
+* Configuration
+** Contrib
+
+*** Shell
+
+The Shell Sytter component allows shell invocations to do virtually any task.
+
+Shell components expose context variables via environment variables prefixed
+with =sytter_=.
+
+* Design
+
+** Startup
+
+Upon startup, =sytter= reads from =--config-dir=, =$SYTTER_CONFIG_DIR=, or
+=~/.config/sytter= for Sytters in that order. Execution of =cron= statements do
+not happen immediately but instead wait for the schedule. Unscheduled operations
+happen immediately, and have a soft intention of executing in lexicographical
+order. No guarantees are made about this order.
+
+See [[Order Dependent Sytters]] for examples of how to handle Sytters that need to
+execute in a controlled order.
+** Sytter Components
+
+A Sytter declaration is made manifest via various Sytter Components that the
+Sytter calls upon. These components fall under a few basic categories:
+
+1. =watch=
+2. =condition=
+3. =execute=
+4. =failure=
+
+A Sytter Component can be stateful. All Sytters components may write to a shared
+context.
+
+* COMMENT Settings
+
+#  LocalWords:  Sytter Sytters
