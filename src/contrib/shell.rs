@@ -1,4 +1,8 @@
-use crate::sytter::{Condition, Executor, Failure};
+use crate::{
+    condition::Condition,
+    executor::Executor,
+    failure::Failure,
+};
 
 pub struct ShellCondition {
     pub shell: String,

@@ -2,7 +2,7 @@ use std::time::Duration;
 use std::thread;
 
 use crate::error::AppError;
-use crate::sytter::Watcher;
+use crate::watcher::Watcher;
 
 pub struct CronWatch {
     pub cron: String,

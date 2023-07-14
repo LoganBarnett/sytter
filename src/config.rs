@@ -1,15 +1,11 @@
-use crate::contrib::shell::{ShellExecutor, ShellFailure};
-use crate::executor::Executor;
-use crate::failure::Failure;
-use crate::{error, contrib::shell::ShellCondition};
-use crate::watcher::Watcher;
-use crate::condition::Condition;
+use crate::error;
 use error::AppError;
-use crate::contrib::cron::CronWatch;
 
-pub struct Config<'a> {
-    pub sytters_path: &String,
+pub struct Config {
+    pub sytters_path: String,
 }
 
-pub fn config_load<'a>() -> Result<Config<'a>, AppError> {
+pub fn config_load() -> Result<Config, AppError> {
+    let config = Config { sytters_path: "".to_string() };
+    Ok(config)
 }
