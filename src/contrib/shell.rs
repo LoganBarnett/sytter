@@ -4,6 +4,7 @@ use crate::{
     failure::Failure,
 };
 
+#[derive(Clone)]
 pub struct ShellCondition {
     pub shell: String,
     pub expected_exit_codes: Vec<usize>,
@@ -15,6 +16,7 @@ impl Condition for ShellCondition {
     }
 }
 
+#[derive(Clone)]
 pub struct ShellExecutor {
     pub shell: String,
 }
@@ -25,6 +27,7 @@ impl Executor for ShellExecutor {
     }
 }
 
+#[derive(Clone)]
 pub struct ShellFailure {
     pub shell: String,
 }

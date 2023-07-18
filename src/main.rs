@@ -12,24 +12,9 @@ mod shell;
 mod sytter;
 mod watcher;
 
-fn main() -> Result<(), AppError> {
+#[tokio::main]
+async fn main() -> Result<(), AppError> {
     let _config = config_load()?;
-    let mut sytter = &mut sytter_load(&"somepath".to_string())?;
-    let executor = &sytter.executor;
-    let condition = &sytter.condition;
-    let failure = &sytter.failure;
-    let mut watcher_mutex = &mut sytter.watcher;
-    if let Ok(watcher) = watcher_mutex.lock() {
-    watcher.watch_start(Box::new(move || {
-        if condition.borrow().check_condition() {
-            executor
-                  .borrow()
-                  .execute()
-                  .or_else(|_| { failure.borrow().execute() });
-        } else {
-            failure.borrow().execute();
-        }
-    }))?;
-    }
-    Ok(())
+    let sytter = sytter_load(&"somepath".to_string())?;
+    sytter.start()
 }
