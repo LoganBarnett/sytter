@@ -49,7 +49,7 @@ duration = "5m"
 
 [execute]
 shell = "mkdir -p ~/Library/Safari/old-history &&
-mv ~/Library/Safari/History* ~/Library/Safari/old-history &&
+mv ~/Library/Safari/History* ~/Library/Safari/old-history/ &&
 kill -9 $(pgrep com.apple.Safari.History)
 "
 
@@ -138,6 +138,7 @@ order. No guarantees are made about this order.
 
 See [[Order Dependent Sytters]] for examples of how to handle Sytters that need to
 execute in a controlled order.
+
 ** Sytter Components
 
 A Sytter declaration is made manifest via various Sytter Components that the

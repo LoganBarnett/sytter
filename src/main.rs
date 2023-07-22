@@ -1,3 +1,7 @@
+// Enables use of Result::inspect_err, a method which allows one to perform an
+// effect on a Result (this is the Err case) without changing anything about the
+// Result.
+#![feature(result_option_inspect)]
 use config::config_load;
 use error::AppError;
 use sytter::sytter_load;
@@ -10,7 +14,8 @@ mod failure;
 mod executor;
 mod shell;
 mod sytter;
-mod watcher;
+mod trigger;
+
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {

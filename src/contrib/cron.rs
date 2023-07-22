@@ -1,62 +1,96 @@
+use async_trait::async_trait;
+use cron::Schedule;
+use tokio::runtime::Runtime;
+use std::sync::mpsc::Receiver;
 use std::time::Duration;
 use std::thread;
-use std::thread::JoinHandle;
 use std::sync::mpsc::{
-    channel,
-    Sender,
+    SyncSender,
     TryRecvError::{
         Empty,
         Disconnected,
     }
 };
 
+use tokio_cron_scheduler::{Job, JobScheduler};
+
 use crate::error::AppError;
-use crate::watcher::Watcher;
+use crate::trigger::Trigger;
 
 #[derive(Clone)]
 pub struct CronWatch {
     pub cron: String,
-    pub shell: String,
-    pub watching: bool,
 }
 
-impl Watcher for CronWatch {
+#[async_trait]
+impl Trigger for CronWatch {
 
-    fn watch_start(
+    fn trigger_await(
         &mut self,
-        watch_trigger: Box<dyn Fn() + Send + Sync + 'static>,
-    ) -> Result<(JoinHandle<()>, Sender<bool>), AppError> {
-        self.watching = true;
-        let (sender, receiver) = channel();
-        let join = thread::spawn(move || {
-            let mut watching = true;
-            let mut ticks = 0;
-            while watching {
-                // Use a low sleep duration so we can shut down Sytter quickly.
-                let duration = Duration::from_millis(1000);
-                thread::sleep(duration);
-                ticks = ticks + 1;
-                if ticks % (5 * 60) == 0 {
-                    watch_trigger()
-                    // f();
-                    // if shell_exec_check(&self.shell, &vec!(2))? {
-                    // }
-                }
-                match receiver.try_recv() {
-                    Ok(b) => watching = b,
-                    Err(e) => match e {
-                        Empty => (),
-                        Disconnected => panic!(),
-                    },
-                }
-                println!("Loop done. Watching? {}", watching);
+        send_to_sytter: SyncSender<String>,
+        receive_from_sytter: Receiver<String>,
+    ) -> Result<(), AppError> {
+        let rt = Runtime::new()
+            .map_err(|e| {
+                AppError::TriggerInitializeError(
+                    format!("Tokio Runtime could not start: {:?}", e),
+                )
+            })?;
+        let sched = rt.block_on(JobScheduler::new())
+            .map_err(|e| {
+                AppError::TriggerInitializeError(
+                    format!("JobScheduler could not start: {:?}", e),
+                )
+            })?;
+        let send_to_sytter_threaded = send_to_sytter.clone();
+        rt.block_on(sched.add(
+            Job::new_cron_job(
+                self.cron.parse::<Schedule>()
+                    .map_err(|e| {
+                        AppError::TriggerInitializeError(format!(
+                            "Cron expression '{:?}' could not be parsed: {:?}",
+                            self.cron,
+                            e,
+                        ))
+                    })?
+                    ,
+                move |_uuid, _l| {
+                    println!("Cron trigger fired!");
+                    match send_to_sytter_threaded.send("foo".to_string()) {
+                        Ok(_) => (),
+                        Err(e) => println!("Error trigging to Sytter: {:?}", e),
+                    };
+                },
+            )
+            .map_err(|e| {
+                AppError::TriggerInitializeError(
+                    format!("Job could not be created: {:?}", e),
+                )
+            })?
+        )
+            )
+            .map_err(|e| {
+                AppError::TriggerInitializeError(
+                    format!("Job could not be added to scheduler: {:?}", e),
+                )
+            })
+            ?;
+        // let mut ticks = 0;
+        let looping = true;
+        while looping {
+            // Use a low sleep duration so we can shut down Sytter quickly.
+            let duration = Duration::from_millis(1000);
+            thread::sleep(duration);
+            match receive_from_sytter.try_recv() {
+                Ok(s) => println!("Received {:?} from sytter", s),
+                Err(e) => match e {
+                    Empty => (),
+                    Disconnected => panic!(),
+                },
             }
-        });
-        Ok((join, sender))
-    }
-
-    fn watch_stop(&mut self) -> Result<(), AppError> {
-        self.watching = false;
+            println!("Loop done.");
+        }
         Ok(())
     }
+
 }

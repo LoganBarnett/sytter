@@ -6,8 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# Allow declaring async functions in traits.  Doing non-trivial code in Rust
+# basically makes this crate mandatory.
+async-trait = "*"
+cron = "*"
+futures = "*"
 # Give us a concurrency model. Needed for handling events.
 #
 # Look here if we're trying to get size down. Unsure what features we'll need
 # currently. I just want it to work.
 tokio = { version = "1.25.0", features = ["full"] }
+# For handling cron parsing and triggering.
+tokio-cron-scheduler = "0.9.4"

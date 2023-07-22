@@ -1,7 +1,7 @@
 use crate::{
     condition::Condition,
     executor::Executor,
-    failure::Failure,
+    failure::Failure, error::AppError,
 };
 
 #[derive(Clone)]
@@ -11,7 +11,7 @@ pub struct ShellCondition {
 }
 
 impl Condition for ShellCondition {
-    fn check_condition(&self) -> bool {
+    fn check_condition(&self) -> Result<bool, AppError> {
         todo!()
     }
 }
@@ -22,7 +22,7 @@ pub struct ShellExecutor {
 }
 
 impl Executor for ShellExecutor {
-    fn execute(&self) -> Result<(), crate::error::AppError> {
+    fn execute(&self) -> Result<(), AppError> {
         todo!()
     }
 }
@@ -33,7 +33,7 @@ pub struct ShellFailure {
 }
 
 impl Failure for ShellFailure {
-    fn execute(&self) -> Result<(), crate::error::AppError> {
+    fn execute(&self, error: AppError) -> Result<(), AppError> {
         todo!()
     }
 }
