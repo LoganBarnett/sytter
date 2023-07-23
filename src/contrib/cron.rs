@@ -25,26 +25,21 @@ pub struct CronWatch {
 #[async_trait]
 impl Trigger for CronWatch {
 
-    fn trigger_await(
+    async fn trigger_await(
         &mut self,
         send_to_sytter: SyncSender<String>,
         receive_from_sytter: Receiver<String>,
     ) -> Result<(), AppError> {
-        let rt = Runtime::new()
-            .map_err(|e| {
-                AppError::TriggerInitializeError(
-                    format!("Tokio Runtime could not start: {:?}", e),
-                )
-            })?;
-        let sched = rt.block_on(JobScheduler::new())
+        let sched = JobScheduler::new()
+            .await
             .map_err(|e| {
                 AppError::TriggerInitializeError(
                     format!("JobScheduler could not start: {:?}", e),
                 )
             })?;
         let send_to_sytter_threaded = send_to_sytter.clone();
-        rt.block_on(sched.add(
-            Job::new_cron_job(
+        sched.add(
+            Job::new(
                 self.cron.parse::<Schedule>()
                     .map_err(|e| {
                         AppError::TriggerInitializeError(format!(
@@ -57,7 +52,7 @@ impl Trigger for CronWatch {
                 move |_uuid, _l| {
                     println!("Cron trigger fired!");
                     match send_to_sytter_threaded.send("foo".to_string()) {
-                        Ok(_) => (),
+                        Ok(_) => println!("Successfully sent message to Sytter."),
                         Err(e) => println!("Error trigging to Sytter: {:?}", e),
                     };
                 },
@@ -68,28 +63,36 @@ impl Trigger for CronWatch {
                 )
             })?
         )
-            )
+            .await
             .map_err(|e| {
                 AppError::TriggerInitializeError(
                     format!("Job could not be added to scheduler: {:?}", e),
                 )
             })
             ?;
+        sched.start()
+            .await
+            .map_err(|e| {
+                AppError::TriggerInitializeError(
+                    format!("Could not start cron scheduler: {:?}", e),
+                )
+            })
+            ?;
         // let mut ticks = 0;
-        let looping = true;
-        while looping {
-            // Use a low sleep duration so we can shut down Sytter quickly.
-            let duration = Duration::from_millis(1000);
-            thread::sleep(duration);
-            match receive_from_sytter.try_recv() {
-                Ok(s) => println!("Received {:?} from sytter", s),
-                Err(e) => match e {
-                    Empty => (),
-                    Disconnected => panic!(),
-                },
-            }
-            println!("Loop done.");
-        }
+        // let looping = true;
+        // while looping {
+        //     // Use a low sleep duration so we can shut down Sytter quickly.
+        //     let duration = Duration::from_millis(1000);
+        //     thread::sleep(duration);
+        //     match receive_from_sytter.try_recv() {
+        //         Ok(s) => println!("Received {:?} from sytter", s),
+        //         Err(e) => match e {
+        //             Empty => (),
+        //             Disconnected => panic!(),
+        //         },
+        //     }
+        //     println!("Loop done.");
+        // }
         Ok(())
     }
 

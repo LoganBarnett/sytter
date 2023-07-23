@@ -5,7 +5,7 @@ use std::sync::mpsc::{SyncSender, Receiver};
 #[async_trait]
 pub trait Trigger {
 
-    fn trigger_await(
+    async fn trigger_await(
         &mut self,
         send_to_sytter: SyncSender<String>,
         receive_from_sytter: Receiver<String>,

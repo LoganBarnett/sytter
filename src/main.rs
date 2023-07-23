@@ -21,5 +21,5 @@ mod trigger;
 async fn main() -> Result<(), AppError> {
     let _config = config_load()?;
     let sytter = sytter_load(&"somepath".to_string())?;
-    sytter.start()
+    sytter.start().await
 }
