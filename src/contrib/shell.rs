@@ -42,7 +42,7 @@ pub struct ShellFailure {
 
 impl Failure for ShellFailure {
     // TODO: This should also take the status.
-    fn execute(&self, error: AppError) -> Result<(), AppError> {
+    fn execute(&self, _error: AppError) -> Result<(), AppError> {
         shell_exec_outputs(&self.shell, &self.script)
             .map(|_| ())
     }

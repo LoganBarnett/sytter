@@ -5,6 +5,7 @@
 use cli::cli_parse;
 use config::config_load;
 use error::AppError;
+use logging::logger_init;
 use sytter::sytter_load;
 
 mod cli;
@@ -23,7 +24,8 @@ mod trigger;
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     let _config = config_load()?;
-    let cli_config = cli_parse();
+    let cli_config = cli_parse()?;
+    logger_init(cli_config.verbosity.log_level())?;
     let sytter = sytter_load(&"somepath".to_string())?;
     sytter.start().await
 }

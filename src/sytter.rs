@@ -51,7 +51,7 @@ pub fn sytter_load(_path: &String) -> Result<Sytter, AppError> {
 impl Sytter {
 
     pub async fn start(mut self) -> Result<(), AppError> {
-        let (send_to_trigger, receive_from_sytter) = sync_channel(0);
+        let (_send_to_trigger, receive_from_sytter) = sync_channel(0);
         let (send_to_sytter, receive_from_trigger) = sync_channel(0);
         let res: Result<(), AppError> = self.watcher.trigger_await(
             send_to_sytter,
