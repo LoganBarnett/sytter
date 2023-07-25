@@ -1,6 +1,7 @@
 [package]
 name = "sytter"
 version = "0.1.0"
+authors = ["Logan Barnett <logustus@gmail.com>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -9,8 +10,27 @@ edition = "2021"
 # Allow declaring async functions in traits.  Doing non-trivial code in Rust
 # basically makes this crate mandatory.
 async-trait = "*"
+# Command Line Argument Parsing.
+clap = { version = "4.3.19", features = ["derive"] }
+# Allow us to increase verbosity with additional v's in -v. For example, we can
+# use -v for verbose, -vv for extra verbose, and -vvv for even more verobisty.
+clap-verbosity-flag = "2.0.1"
+# In order to reference parts of cron scheduling that tokio-cron-scheduler uses,
+# we need to explicitly declare cron as a dependency as well.
 cron = "*"
+# I don't know if we need this still.
 futures = "*"
+# Give us a generalized logger.
+log = "*"
+# Serde gives us generalized serializing/deserializing, which we use for reading
+# in Sytter configurations.
+serde = { version = "*", features = ["derive"] }
+# Convert from one format to another, I think. I need to check if this is
+# actually necessary. It was lifted from another project.
+serdeconv = "*"
+# Logging should always go to stderr. Reserve stdout for potentially parsable
+# output.
+stderrlog = "*"
 # Give us a concurrency model. Needed for handling events.
 #
 # Look here if we're trying to get size down. Unsure what features we'll need

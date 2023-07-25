@@ -1,21 +1,9 @@
 use async_trait::async_trait;
-use cron::Schedule;
-use tokio::runtime::Runtime;
-use std::sync::mpsc::Receiver;
-use std::time::Duration;
-use std::thread;
-use std::sync::mpsc::{
-    SyncSender,
-    TryRecvError::{
-        Empty,
-        Disconnected,
-    }
-};
-
-use tokio_cron_scheduler::{Job, JobScheduler};
-
 use crate::error::AppError;
 use crate::trigger::Trigger;
+use cron::Schedule;
+use std::sync::mpsc::{Receiver, SyncSender};
+use tokio_cron_scheduler::{Job, JobScheduler};
 
 #[derive(Clone)]
 pub struct CronWatch {
@@ -28,7 +16,7 @@ impl Trigger for CronWatch {
     async fn trigger_await(
         &mut self,
         send_to_sytter: SyncSender<String>,
-        receive_from_sytter: Receiver<String>,
+        _receive_from_sytter: Receiver<String>,
     ) -> Result<(), AppError> {
         let sched = JobScheduler::new()
             .await

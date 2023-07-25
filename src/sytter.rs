@@ -9,7 +9,7 @@ use crate::{
     failure::Failure,
     trigger::Trigger,
 };
-use std::{sync::mpsc::sync_channel, thread};
+use std::{sync::mpsc::sync_channel};
 
 pub struct Sytter {
     pub name: String,

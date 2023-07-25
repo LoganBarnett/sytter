@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub enum AppError {
     ConfigLoadError,
+    LoggingInitializationError(log::SetLoggerError),
     ShellChildTerminatedError,
     ShellExecError((String, String)),
     ShellSpawnError(std::io::Error),
