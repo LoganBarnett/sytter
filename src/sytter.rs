@@ -9,7 +9,12 @@ use crate::{
     failure::Failure,
     trigger::Trigger,
 };
-use std::{sync::mpsc::sync_channel};
+use log::{
+    debug,
+    error,
+    info,
+};
+use std::sync::mpsc::sync_channel;
 
 pub struct Sytter {
     pub name: String,
@@ -59,44 +64,44 @@ impl Sytter {
         )
             .await
             .inspect_err(|e| {
-                println!("Error in watch loop: {:?}", e);
+                error!("Error in watch loop: {:?}", e);
             })
             .and_then(|()| {
                 loop {
-                    println!("Waiting for message from trigger...");
+                    info!("Waiting for message from trigger...");
                     let trigger_message = receive_from_trigger.recv();
-                    println!("Got trigger message: {:?}", trigger_message);
+                    debug!("Got trigger message: {:?}", trigger_message);
                     let _ = self
                         .condition
                         .check_condition()
                         .and_then(|cond| {
                             if cond {
-                                println!("Conditional is true, executing...");
+                                debug!("Conditional is true, executing...");
                                 self.executor
                                     .execute()
-                                    .inspect(|_| { println!("Execution successful.") })
+                                    .inspect(|_| { info!("Execution successful.") })
                             } else {
-                                println!("Conditional is false.");
+                                debug!("Conditional is false.");
                                 // Log that the condition fell through.
                                 Ok(())
                             }
                         })
                         .or_else(|e| {
-                            println!("Executor failed: {:?}", e);
+                            error!("Executor failed: {:?}", e);
                             self.failure.execute(e)
                                         .inspect(|_| {
-                                            println!("Failure handler successful!");
+                                            info!("Failure handler successful!");
                                         })
                         })
                         .map(|_| { () } )
                         .inspect_err(|e| {
-                            println!("It blowed up bad in condition! {:?}", e)
+                            error!("It blowed up bad in condition! {:?}", e)
                         });
                 };
             });
         match res {
             Ok(_) => (),
-            Err(e) => println!("It blowed up bad in trigger! {:?}", e),
+            Err(e) => error!("It blowed up bad in trigger! {:?}", e),
         }
         Ok(())
     }

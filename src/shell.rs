@@ -6,12 +6,14 @@ pub fn shell_exec_check(
     expected_exit_codes: &Vec<i32>,
     script: &String,
 ) -> Result<bool, AppError> {
-    let status = Command::new(shell)
+    let output = Command::new(shell)
         .args(["-c", script])
-        .status()
+        .output()
         .map_err(AppError::ShellSpawnError)
         ?;
-    status
+    // TODO: debug-log the shell outputs.
+    output
+        .status
         .code()
         .ok_or(AppError::ShellChildTerminatedError)
         .map(|code| {
@@ -38,6 +40,7 @@ pub fn shell_exec_outputs(
                 from_utf8(&output.stdout)?,
                 from_utf8(&output.stderr)?,
             );
+            // TODO: debug-log the shell outputs.
             match output.status.code() {
                 Some(status) => if status == 0 {
                     Ok(outputs)

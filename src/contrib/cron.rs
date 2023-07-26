@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use crate::error::AppError;
 use crate::trigger::Trigger;
 use cron::Schedule;
+use log::{debug, info};
 use std::sync::mpsc::{Receiver, SyncSender};
 use tokio_cron_scheduler::{Job, JobScheduler};
 
@@ -38,10 +39,10 @@ impl Trigger for CronWatch {
                     })?
                     ,
                 move |_uuid, _l| {
-                    println!("Cron trigger fired!");
+                    info!("Cron trigger fired!");
                     match send_to_sytter_threaded.send("foo".to_string()) {
-                        Ok(_) => println!("Successfully sent message to Sytter."),
-                        Err(e) => println!("Error trigging to Sytter: {:?}", e),
+                        Ok(_) => debug!("Successfully sent message to Sytter."),
+                        Err(e) => debug!("Error trigging to Sytter: {:?}", e),
                     };
                 },
             )
@@ -66,21 +67,6 @@ impl Trigger for CronWatch {
                 )
             })
             ?;
-        // let mut ticks = 0;
-        // let looping = true;
-        // while looping {
-        //     // Use a low sleep duration so we can shut down Sytter quickly.
-        //     let duration = Duration::from_millis(1000);
-        //     thread::sleep(duration);
-        //     match receive_from_sytter.try_recv() {
-        //         Ok(s) => println!("Received {:?} from sytter", s),
-        //         Err(e) => match e {
-        //             Empty => (),
-        //             Disconnected => panic!(),
-        //         },
-        //     }
-        //     println!("Loop done.");
-        // }
         Ok(())
     }
 
