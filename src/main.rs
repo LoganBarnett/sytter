@@ -2,13 +2,12 @@
 // effect on a Result (this is the Err case) without changing anything about the
 // Result.
 #![feature(result_option_inspect)]
-use cli::cli_parse;
-use config::config_load;
+use config::{env_config_load, config_cli_merge, cli_parse};
 use error::AppError;
+use log::debug;
 use logging::logger_init;
 use sytter::sytter_load;
 
-mod cli;
 mod condition;
 mod config;
 mod contrib;
@@ -23,9 +22,11 @@ mod trigger;
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    let _config = config_load()?;
+    let env_config = env_config_load()?;
     let cli_config = cli_parse()?;
-    logger_init(cli_config.verbosity.log_level())?;
-    let sytter = sytter_load(&"somepath".to_string())?;
+    let config = config_cli_merge(env_config, cli_config);
+    logger_init(config.verbosity.log_level())?;
+    debug!("Using config: {:?}", config);
+    let sytter = sytter_load(&config.sytters_path)?;
     sytter.start().await
 }

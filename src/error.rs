@@ -1,6 +1,8 @@
+use std::env::VarError;
+
 #[derive(Debug)]
 pub enum AppError {
-    // ConfigLoadError,
+    ConfigEnvVarError(VarError),
     LoggingInitializationError(log::SetLoggerError),
     ShellChildTerminatedError,
     ShellExecError((String, String)),
