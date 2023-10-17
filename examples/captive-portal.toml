@@ -1,0 +1,39 @@
+name = "Captive Portal Authentication"
+description = "Periodically authenticate via Captive Portal when on the VPN."
+
+# This can't deserialize right now. While the code seems more straightforward
+# with serde_traitobject, it is not suitable for our purposes. erased-serde
+# seems like a better candidate, as seen in this example here:
+# https://stackoverflow.com/a/50026869 though the examples in the readme don't
+# convince a window shopper that it actually does the job.
+#
+# The example is for serialization but it could be adapted to deserialization
+# probably.
+[[trigger]]
+kind = "cron"
+# 1/minute is a more practical schedule, but impractical for testing.
+# cron = "0 1 * * * * *"
+# Every 4 seconds.
+cron = "1/4 * * * * *"
+
+[[condition]]
+kind = "shell"
+# This is a boolean expression in Bash that will only run if we're on the VPN.
+# Not working for you? You can try some of the suggestions here:
+# https://community.jamf.com/t5/jamf-pro/how-to-check-if-the-mac-is-connected-to-vpn/m-p/291122
+script = "[[ $( /usr/sbin/scutil --nwi ) == *\"utun\"* ]]"
+
+[[execute]]
+kind = "shell"
+# When the trigger is triggered, and the condition is true, we run this script.
+script = "~/bin/captivate.sh"
+
+[[failure]]
+kind = "shell"
+# Send a local email (with `sendmail`) to tell us about it.
+script = """\
+printf '%s\n' 'Subject: Capitive Portal auth failed' \
+        '' \
+        'Captive Portal authentication is failing! See $LOG for details.' \
+| sendmail $USER \
+"""

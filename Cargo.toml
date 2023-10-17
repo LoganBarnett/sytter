@@ -28,6 +28,8 @@ serde = { version = "*", features = ["derive"] }
 # Convert from one format to another, I think. I need to check if this is
 # actually necessary. It was lifted from another project.
 serdeconv = "*"
+# Allow us to deserialize traits so sytter components can vary.
+serde_traitobject= "*"
 # Logging should always go to stderr. Reserve stdout for potentially parsable
 # output.
 stderrlog = "*"
@@ -38,3 +40,5 @@ stderrlog = "*"
 tokio = { version = "1.25.0", features = ["full"] }
 # For handling cron parsing and triggering.
 tokio-cron-scheduler = "0.9.4"
+# A serde handler for toml files, so we can read sytter definitions.
+toml = "*"

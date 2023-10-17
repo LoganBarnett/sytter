@@ -1,9 +1,10 @@
 use async_trait::async_trait;
+use core::fmt::Debug;
 use crate::error::AppError;
 use std::sync::mpsc::{SyncSender, Receiver};
 
 #[async_trait]
-pub trait Trigger {
+pub trait Trigger: Debug + Sync + Send + serde_traitobject::Deserialize {
 
     async fn trigger_await(
         &mut self,

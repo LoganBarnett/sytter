@@ -1,12 +1,12 @@
 use async_trait::async_trait;
-use crate::error::AppError;
-use crate::trigger::Trigger;
+use serde::Deserialize;
+use crate::{error::AppError, trigger::Trigger};
 use cron::Schedule;
 use log::{debug, info};
 use std::sync::mpsc::{Receiver, SyncSender};
 use tokio_cron_scheduler::{Job, JobScheduler};
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct CronWatch {
     pub cron: String,
 }
@@ -40,6 +40,8 @@ impl Trigger for CronWatch {
                     ,
                 move |_uuid, _l| {
                     info!("Cron trigger fired!");
+                    // We don't really have a meaningful message to send, I
+                    // think. Not yet. For now we just need to send _something_.
                     match send_to_sytter_threaded.send("foo".to_string()) {
                         Ok(_) => debug!("Successfully sent message to Sytter."),
                         Err(e) => debug!("Error trigging to Sytter: {:?}", e),

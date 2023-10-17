@@ -2,6 +2,8 @@
 // effect on a Result (this is the Err case) without changing anything about the
 // Result.
 #![feature(result_option_inspect)]
+use std::path::Path;
+
 use config::{env_config_load, config_cli_merge, cli_parse};
 use error::AppError;
 use log::debug;
@@ -27,6 +29,19 @@ async fn main() -> Result<(), AppError> {
     let config = config_cli_merge(env_config, cli_config);
     logger_init(config.verbosity.log_level())?;
     debug!("Using config: {:?}", config);
-    let sytter = sytter_load(&config.sytters_path)?;
-    sytter.start().await
+    let path = Path::new(&config.sytters_path);
+    for file in path.read_dir().map_err(AppError::SyttersDirInvalidError)? {
+        let sytter = sytter_load(
+            path.join(
+                file
+                    .map_err(AppError::SyttersDirInvalidError)
+                    ?
+                    .path()
+                    ,
+            )
+            .as_path(),
+        )?;
+        sytter.start().await?
+    }
+    Ok(())
 }

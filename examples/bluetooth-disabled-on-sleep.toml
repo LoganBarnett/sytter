@@ -1,0 +1,31 @@
+name = "Bluetooth disabled on sleep"
+description = """\
+Disable bluetooth on sleep, and enable it again when waking up. \
+Helpful for macOS, which is notorious for draining battery from chatty \
+Bluetooth devices."""
+
+# [[trigger]]
+# kind = "sleep"
+
+# TODO: Fix for sleep.
+[[trigger]]
+kind = "cron"
+cron = "1/4 * * * * *"
+
+[[condition]]
+kind = "shell"
+script = "true"
+
+[[execute]]
+kind = "shell"
+script = ""
+
+[[failure]]
+kind = "shell"
+# Send a local email (with `sendmail`) to tell us about it.
+script = """\
+printf '%s\n' 'Subject: Bluetooth management on sleep/wake failed' \
+       '' \
+       'Failed trying to manage Bluetooth during $action! See $LOG for details.' \
+| sendmail $USER \
+"""

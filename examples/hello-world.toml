@@ -1,0 +1,18 @@
+name = "Hello World"
+description = "A very basic example"
+
+[[trigger]]
+kind = "cron"
+cron = "1/4 * * * * *"
+
+[[condition]]
+kind = "shell"
+script = "true"
+
+[[execute]]
+kind = "shell"
+script = "ls -al"
+
+[[failure]]
+kind = "shell"
+script = "echo 'There was an error!'"
