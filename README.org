@@ -233,6 +233,110 @@ For example, logging is not part of a Sytter component but instead something all
 components may wish to use. Triggers can universally be configured to wait for a
 certain number of consecutive failures or some other pattern in the rate at
 which failures occur.
+* Roadmap
+** Respond to kill signals
+
+=SIGTERM= should begin a graceful shutdown. Listeners are shut down, and the
+process waits for any outstanding executions to complete.
+
+=SIGQUIT= and =SIGINT= are less graceful. Shut down listeners but immediately
+give up on executors.
+
+=SIGHUP= reloads configuration and Sytters.
+
+** Daemonize
+
+Provide other machinery for daemonization. This could mean adding logs, a log
+destination, additional configuration, etc.
+
+** Variables
+
+We need a way for Sytters to govern their own state and possibly a global state.
+This way Sytter components can have a decoupled means of communicating with each
+other.
+
+We also need to provide a standardized set of variables for common activities,
+such as a variable for log location, the Sytter information itself, etc.
+
+** Dynamic enabling
+
+A Sytter should have some means of being enabled/disabled via some conditions
+(evaluated upon startup or =SIGHUP=).
+
+Additionally, we should allow Sytters to trigger other Sytters to be enabled.
+This should be carefully thought out. Is it done via variables? Do variable
+changes cause the enabled field to be re-evaluated?
+
+** Switch to YAML
+
+I was hoping to steer away from
+yet-another-system-management-tool-powered-by-yaml but TOML is proving to be a
+little _too_ simple for our uses. It is difficult to express a Sytter with
+idiomatic TOML and harder still to deserialize the various components. Switching
+to YAML may prove more useful.
+
+** Allow plugins
+
+Somehow we need to be able to dynamically load new components. I have no idea
+how to do this in Rust.
+
+** Add a test suite
+
+I can be convinced of the value of unit tests in Rust, since they are local to
+the method and double as documentation. But we also need to have some kind of
+integration level tests.
+
+** Add a build pipeline
+
+We need a build pipeline that produces executables for the big 3 (Linux, macOS,
+and Windows). Windows I am completely unable to test, so someone else will have
+to handle that.
+
+** Create installers
+
+We need installers for the big three (Linux, macOS, Windows). I don't have
+Windows available to test, so someone else will have to contribute or verify
+that.
+
+Installers include:
+
++ Homebrew (macOS) - I know there are others and will be happy to support them
+  if interest is expressed.
++ Chocolatety (for Windows?).
++ An RPM/yum package.
++ A deb/apt package.
++ A nix derivation.
++ Home manager would be neat!
+
+Each of these should support the ability to run daemonized. So that means
+LaunchServices, a systemd unit file, etc.
+
+** Add way more documentation
+
+How do you author your own components? How do they get added? How can you test
+them?
+
+What does contribution look like?
+
+
+** Add way more examples
+
+More examples of doing cool stuff. Examples can double as a trove of great
+tools.
+
+** Make sure this works with symlinks
+
+All configurations should load fine with symlinks. I feel like this should be a
+given, but I have seen far too many modern tools that give symlinks special
+treatment, and thus support is poor to outright refused. As a mission statement
+we support symlinks. Integration tests will include a symlink test.
+
+** Support runtime reloading of Sytters
+
+This can be done via file watches but really we can just listen for =SIGHUP=.
+More importantly for this item: We need to be able to tear down Sytters and
+stand them up again. We should take an MD5 sum of each Sytter and use that as a
+basis of whether or not we should attempt a reload for that particular Sytter.
 
 * COMMENT Settings
 

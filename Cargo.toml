@@ -6,6 +6,10 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[build-dependencies]
+bindgen = "0.69.1"
+# bindgen = {git = "https://github.com/LoganBarnett/rust-bindgen.git", ref = "0e8000e2d62d5c5b067d2b0ea0d4fc553c9712a0"}
+
 [dependencies]
 # Allow declaring async functions in traits.  Doing non-trivial code in Rust
 # basically makes this crate mandatory.
@@ -22,6 +26,7 @@ cron = "*"
 futures = "*"
 # Give us a generalized logger.
 log = "*"
+objc = "*"
 # Serde gives us generalized serializing/deserializing, which we use for reading
 # in Sytter configurations.
 serde = { version = "*", features = ["derive"] }
@@ -42,3 +47,7 @@ tokio = { version = "1.25.0", features = ["full"] }
 tokio-cron-scheduler = "0.9.4"
 # A serde handler for toml files, so we can read sytter definitions.
 toml = "*"
+lazy_static = "1.4.0"
+num-derive = "0.4.1"
+num = "0.4.1"
+num-traits = "0.2.17"

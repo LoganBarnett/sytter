@@ -8,11 +8,10 @@ pub fn logger_init(verbosity: Option<Level>) -> Result<(), AppError> {
             logger
                 .verbosity(level)
                 .init()
-                .map_err(AppError::LoggingInitializationError)
-                ?;
+                .map_err(AppError::LoggingInitializationError)?;
             warn!("Setup logger with verbosity {}.", level);
             Ok(())
-        },
+        }
         None => Ok(()),
     }
 }

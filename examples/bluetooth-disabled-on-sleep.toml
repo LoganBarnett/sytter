@@ -4,13 +4,8 @@ Disable bluetooth on sleep, and enable it again when waking up. \
 Helpful for macOS, which is notorious for draining battery from chatty \
 Bluetooth devices."""
 
-# [[trigger]]
-# kind = "sleep"
-
-# TODO: Fix for sleep.
 [[trigger]]
-kind = "cron"
-cron = "1/4 * * * * *"
+kind = "power"
 
 [[condition]]
 kind = "shell"
@@ -18,7 +13,7 @@ script = "true"
 
 [[execute]]
 kind = "shell"
-script = ""
+script = "blueutil --power 0"
 
 [[failure]]
 kind = "shell"

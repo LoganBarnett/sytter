@@ -1,9 +1,10 @@
-use std::{env::VarError};
+use std::env::VarError;
 
 #[derive(Debug)]
 pub enum AppError {
     ConfigEnvVarError(VarError),
     LoggingInitializationError(log::SetLoggerError),
+    PowerHookRegistrationFailed,
     ShellChildTerminatedError,
     ShellExecError((String, String)),
     ShellSpawnError(std::io::Error),

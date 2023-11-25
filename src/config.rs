@@ -1,13 +1,11 @@
+use crate::error::AppError;
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
-use crate::error::AppError;
 use std::env::var;
 
 // Without a structopt declaration, the argument is positional.
 #[derive(Debug, Parser)]
-#[command(
-    about = "Babysit your system with IFTTT automation.",
-)]
+#[command(about = "Babysit your system with IFTTT automation.")]
 pub struct CliConfig {
     #[arg(short, long)]
     pub sytters_path: Option<String>,
@@ -30,13 +28,11 @@ pub fn env_config_load() -> Result<EnvConfig, AppError> {
     let config = EnvConfig {
         sytters_path: var("sytter_sytters_path")
             .map_err(AppError::ConfigEnvVarError)
-            .ok()
-            ,
+            .ok(),
         verbosity: var("sytter_verbosity")
             .map(|x| Verbosity::new(x.parse().unwrap(), 0))
             .map_err(AppError::ConfigEnvVarError)
-            .ok()
-            ,
+            .ok(),
     };
     Ok(config)
 }
@@ -49,13 +45,11 @@ pub fn config_cli_merge(
         sytters_path: cli_config
             .sytters_path
             .or(env_config.sytters_path)
-            .unwrap_or("~/.config/sytter/sytters".to_string())
-            ,
+            .unwrap_or("~/.config/sytter/sytters".to_string()),
         verbosity: cli_config
             .verbosity
             .or(env_config.verbosity)
-            .unwrap_or(Verbosity::new(1, 0))
-            ,
+            .unwrap_or(Verbosity::new(1, 0)),
     }
 }
 
