@@ -24,8 +24,17 @@ clap-verbosity-flag = "2.0.1"
 cron = "*"
 # I don't know if we need this still.
 futures = "*"
+# Allows us to initialize complex data (like a HashMap with stuff in it) that is
+# globally accessible.
+lazy_static = "1.4.0"
 # Give us a generalized logger.
 log = "*"
+# num and friends allow us to convert numbers into enums, which is useful for
+# working with native bindings.
+num-derive = "0.4.1"
+num = "0.4.1"
+num-traits = "0.2.17"
+# Handles messaging with Objective-C message sending of objects.
 objc = "*"
 # Serde gives us generalized serializing/deserializing, which we use for reading
 # in Sytter configurations.
@@ -38,6 +47,9 @@ serde_traitobject= "*"
 # Logging should always go to stderr. Reserve stdout for potentially parsable
 # output.
 stderrlog = "*"
+# strum and friends allows us to easily convery Strings to enums.
+strum = "0.25"
+strum_macros = "0.25.3"
 # Give us a concurrency model. Needed for handling events.
 #
 # Look here if we're trying to get size down. Unsure what features we'll need
@@ -47,7 +59,3 @@ tokio = { version = "1.25.0", features = ["full"] }
 tokio-cron-scheduler = "0.9.4"
 # A serde handler for toml files, so we can read sytter definitions.
 toml = "*"
-lazy_static = "1.4.0"
-num-derive = "0.4.1"
-num = "0.4.1"
-num-traits = "0.2.17"

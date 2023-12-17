@@ -6,6 +6,7 @@ Bluetooth devices."""
 
 [[trigger]]
 kind = "power"
+events = ["Sleep", "Wake"]
 
 [[condition]]
 kind = "shell"

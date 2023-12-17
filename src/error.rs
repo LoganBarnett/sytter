@@ -5,6 +5,8 @@ pub enum AppError {
     ConfigEnvVarError(VarError),
     LoggingInitializationError(log::SetLoggerError),
     PowerHookRegistrationFailed,
+    PowerEventParseError,
+    PowerEventsMissingError,
     ShellChildTerminatedError,
     ShellExecError((String, String)),
     ShellSpawnError(std::io::Error),

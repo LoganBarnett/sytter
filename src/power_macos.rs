@@ -2,6 +2,7 @@
 
 use crate::num::FromPrimitive;
 use crate::{
+    error::AppError,
     macos_bindings::{
         AppleIoMessage,
         AppleIoReturn,
@@ -31,7 +32,7 @@ use crate::{
         kIOMessageSystemWillSleep,
         kIOReturnSuccess,
     },
-    error::AppError,
+    contrib::power::PowerEvent,
 };
 use lazy_static::lazy_static;
 use std::sync::{Arc, Mutex};
@@ -49,7 +50,7 @@ use std::{collections::HashMap, ffi::c_void};
 // Gives us macros such as debug! and error! See logging.rs for setup.
 use log::*;
 
-type KernelPortCallback = dyn FnMut() -> io_connect_t + Send;
+type KernelPortCallback = dyn FnMut(PowerEvent) -> io_connect_t + Send;
 
 lazy_static! {
     static ref CALLBACKS: Arc<Mutex<HashMap<usize, Box<KernelPortCallback>>>> =
@@ -68,6 +69,11 @@ extern "C" fn service_callback(
         AppleIoMessage::from_u32(message_type as u32).unwrap(),
     );
     trace!("refcon: {:?}", refcon);
+    trace!("Getting {:?} from callback container.", refcon);
+    let num = refcon as usize;
+    let mut callbacks = CALLBACKS.lock().unwrap();
+    let closure: &mut Box<KernelPortCallback> =
+        callbacks.get_mut(&num).unwrap();
     // These two messages require acknowledgement or they will stall the
     // sleeping process.
     if message_type == kIOMessageCanSystemSleep
@@ -78,12 +84,7 @@ extern "C" fn service_callback(
         } else {
             debug!("Got message kIOMessageWillSystemSleep.");
         }
-        trace!("Getting {:?} from callback container.", refcon);
-        let num = refcon as usize;
-        let mut callbacks = CALLBACKS.lock().unwrap();
-        let closure: &mut Box<KernelPortCallback> =
-            callbacks.get_mut(&num).unwrap();
-        let kernel_port = closure();
+        let kernel_port = closure(PowerEvent::Sleep);
         trace!("Transmuted refcon to our closure.");
         // According to documentation here:
         // https://developer.apple.com/library/archive/qa/qa1340/_index.html
@@ -121,6 +122,7 @@ Using kernel_port {:?} and notifiy_id {:?}",
     // is where we want to do our work.
     else if message_type == kIOMessageSystemHasPoweredOn {
         debug!("Got message kIOMessageSystemHasPoweredOn.");
+        closure(PowerEvent::Wake);
     }
     // These should be no action - someone vetoed sleep.
     else if message_type == kIOMessageSystemWillNotSleep {
@@ -157,7 +159,7 @@ fn port_ref_create() -> Result<IONotificationPortRef, AppError> {
 
 #[cfg(target_os = "macos")]
 pub fn sleep_listen_start(
-    mut callback: impl FnMut() -> () + Send + 'static,
+    mut callback: impl FnMut(PowerEvent) -> () + Send + 'static,
 ) -> Result<Box<dyn FnOnce() -> Result<(), AppError>>, AppError> {
     let mut port_ref = port_ref_create()?;
     let mut notifier: io_object_t = io_object_t(0u32);
@@ -184,11 +186,13 @@ pub fn sleep_listen_start(
     };
     trace!("kernel_port mutated to: {:?}", kernel_port);
     trace!("port_ref mutated to: {:?}", port_ref);
-    let stoppable_callback: Box<KernelPortCallback> = Box::new(move || {
-        trace!("In closure!");
-        callback();
-        kernel_port
-    });
+    let stoppable_callback: Box<KernelPortCallback> = Box::new(
+        move |p: PowerEvent| {
+            trace!("In closure with event {:?}!", p);
+            callback(p);
+            kernel_port
+        }
+    );
     trace!("Storing {:?} in callbacks container.", port_ref_to_refcon.0);
     {
         let mut callbacks = CALLBACKS.lock().unwrap();
