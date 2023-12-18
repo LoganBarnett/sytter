@@ -2,6 +2,35 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
+
+// It looks like there is icrate for doing objective C binding generation that
+// might be really good.  I haven't looked into it much, and it would be really
+// great if it were also part of bindgen (the author admits as much).  This is
+// from the same author as objc2, so I could expect a reasonable amount of
+// integration there.  See for the completion:
+// https://github.com/madsmtm/objc2/pull/308
+// Until then, I'm still using this weirdly merged version of things (that
+// somehow works).  But I get these warnings:
+// warning: unexpected `cfg` condition value: `cargo-clippy`
+//      --> lib/macos-bindings/src/macos_bindings_emitted.rs:65567:19
+//       |
+// 65567 |     Self(unsafe { msg_send!(class!(aProtocol), alloc) })
+//       |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//       |
+//       = note: no expected values for `feature`
+//       = help: consider adding `cargo-clippy` as a feature in `Cargo.toml`
+//       = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+//       = note: this warning originates in the macro `sel_impl` which comes from the expansion of the macro `msg_send` (in Nightly builds, run with -Z macro-backtrace for more info)
+// Which, based on other hardships I've had with upgrading things, is perhaps a
+// sign that something changed in Rust proper, and it's caused a bunch of
+// downstream warnings that folks have adjusted in their current versions of the
+// library, but objc isn't current so it'll never get fixed.  Instead of
+// reapproaching things, I've chosen to ignore the warning thusly:
+#![allow(unexpected_cfgs)]
+// As a side note to the clippy error above, it would be really nice if Cargo
+// would tell me what warning is being flagged so I can easily add allow
+// statements like above.  The _only_ place this seems to be documented is in
+// Rust itself via `rustc -W help`.
 #![cfg(target_os = "macos")]
 include!("macos_bindings_emitted.rs");
 // http://fxr.watson.org/fxr/source/iokit/IOKit/IOReturn.h?v=xnu-1699.24.8#L48
@@ -110,6 +139,9 @@ pub const kIOReturnIsoTooNew: u32 = iokit_common_err(0x2ef); // isochronous I/O 
 pub const kIOReturnNotFound: u32 = iokit_common_err(0x2f0); // data was not found
 pub const kIOReturnInvalid: u32 = iokit_common_err(0x1); // should never be seen
 
+// https://developer.apple.com/documentation/corefoundation/cfnumbertype/kcfnumbersint32type
+pub const kCFNumberSInt32Type: i64 = 0x3;
+
 #[derive(Debug, FromPrimitive)]
 // Needed due to
 // https://github.com/rust-lang/rust/issues/21493#issuecomment-71304090
@@ -209,4 +241,24 @@ extern "C" {
         kernelPort: io_connect_t,
         notificationID: *mut ::std::os::raw::c_void,
     ) -> IOReturn;
+}
+
+// Unsure why this isn't getting picked up anymore.  I bumped the bindgen
+// package and didn't look to see if anything changed of importance on
+// invocation.  For now just copy the declaration here until I can figure it
+// out.
+extern "C" {
+  pub fn CFNumberCreate(
+    allocator: CFAllocatorRef,
+    theType: CFNumberType,
+    valuePtr: *const ::std::os::raw::c_void,
+  ) -> CFNumberRef;
+}
+
+pub type CFNumberType = CFIndex;
+pub type CFNumberRef = *const __CFNumber;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct __CFNumber {
+  _unused: [u8; 0],
 }

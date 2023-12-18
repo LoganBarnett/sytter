@@ -13,10 +13,11 @@ pub struct CliConfig {
     pub verbosity: Option<Verbosity>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Config {
     pub sytters_path: String,
     pub verbosity: Verbosity,
+  pub http_port: usize,
 }
 
 pub struct EnvConfig {
@@ -24,6 +25,7 @@ pub struct EnvConfig {
     pub verbosity: Option<Verbosity>,
 }
 
+// TODO: Remove this, since clap handles this now.
 pub fn env_config_load() -> Result<EnvConfig, AppError> {
     let config = EnvConfig {
         sytters_path: var("sytter_sytters_path")
@@ -42,6 +44,8 @@ pub fn config_cli_merge(
     cli_config: CliConfig,
 ) -> Config {
     Config {
+      // TODO: feed this to the HTTP server.
+      http_port: 8080,
         sytters_path: cli_config
             .sytters_path
             .or(env_config.sytters_path)

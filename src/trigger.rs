@@ -1,15 +1,14 @@
 use crate::error::AppError;
-use async_trait::async_trait;
 use core::fmt::Debug;
 use std::sync::mpsc::{Receiver, SyncSender};
 
-#[async_trait]
+#[typetag::serde(tag = "type")]
 pub trait Trigger:
-    Debug + Sync + Send + serde_traitobject::Deserialize
+  Debug + Sync + Send
 {
-    async fn trigger_await(
-        &mut self,
-        send_to_sytter: SyncSender<String>,
-        receive_from_sytter: Receiver<String>,
-    ) -> Result<(), AppError>;
+  fn trigger_await(
+    &mut self,
+    send_to_sytter: SyncSender<String>,
+    receive_from_sytter: Receiver<String>,
+  ) -> Result<(), AppError>;
 }

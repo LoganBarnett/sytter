@@ -10,8 +10,8 @@ Here be dragons!
 
 A baby sitter for your computer system.
 
-Provides a platform for watching your host and performing any corrective actions
-you wish.
+Sytter is an event driven automation platform.  You can use it for  watching
+your host and performing any corrective actions you wish.
 
 Runs natively.
 
@@ -115,15 +115,149 @@ shell = "printf '%s\n' 'Subject: Capitive Portal auth failed' \
 | sendmail $USER"
 #+end_src
 
+*** Disable Bluetooth when going to sleep
+
+For those of us on macOS, there's been some problems with Bluetooth running our
+batteries down.  While this has even plagued those of us on Apple's power light
+ARM processors, it's especially harsh on the batteries of Intel based machines.
+Be mindful you will lose theft/loss prevention (via Find My et. al) while
+sleeping if you do this.
+
+#+begin_src toml :results none :exports code
+name = "Bluetooth disabled on sleep"
+description = """\
+Disable bluetooth on sleep, and enable it again when waking up. \
+Helpful for macOS, which is notorious for draining battery from chatty \
+Bluetooth devices."""
+
+[[trigger]]
+kind = "power"
+events = ["Sleep", "Wake"]
+
+[[condition]]
+kind = "shell"
+script = "true"
+
+[[execute]]
+kind = "shell"
+script = """\
+set -euo pipefail
+sytter-vars
+sytter_bluetooth_enabled_at_sleep=\"${sytter_bluetooth_enabled_at_sleep:-}\"
+echo \"Power event: '$sytter_power_event' \"
+if [[ \"$sytter_power_event\" == \"Sleep\" ]]; then
+  # Store the original Bluetooth value so we can put it back when this is done.
+  sytter_bluetooth_enabled_at_sleep=\"$(blueutil --power)\"
+  sytter-var-write sytter_bluetooth_enabled_at_sleep
+  blueutil --power 0
+else
+  sytter-vars sytter_bluetooth_enabled_at_sleep
+  enabled_text=\"$(
+    [[ \"$sytter_bluetooth_enabled_at_sleep\" == '1' ]] \
+      && printf '%s' 'enabled' \
+      || printf '%s' 'disabled'
+  )\"
+  echo \"Bluetooth was $enabled_text ($sytter_bluetooth_enabled_at_sleep) when sleep started, so it will be $enabled_text now.\"
+  # Don't blindly enable Bluetooth - if we had it off before, keep it off now.
+  blueutil --power \"$sytter_bluetooth_enabled_at_sleep\"
+fi
+"""
+
+[[failure]]
+kind = "shell"
+# Send a local email (with `sendmail`) to tell us about it.
+script = """\
+printf '%s\n' 'Subject: Bluetooth management on sleep/wake failed' \
+       '' \
+       'Failed trying to manage Bluetooth during $action! See $LOG for details.' \
+| sendmail $USER \
+"""
+#+end_src
+
+See [[./examples/bluetooth-disabled-on-sleep.toml]] for a known-working example, but
+the above should just be a copy.
+
 * Configuration
 ** Contrib
+
+*** Power
+
+This provides a trigger when power changes.
+
+The ~kind~ is ~power~, and you can listen to various ~events~:
+
++ ~Sleep~
++ ~Wake~
++ ~Unknown~
+
+~Boot~ and ~Shutdown~ are not supported at this time, but could be supported
+later, or perhaps supported a limited selection of operating systems.
+
+Only ~macOS~ works with ~power~ currently.
+
+Example:
+
+#+begin_src toml
+[[trigger]]
+kind = "power"
+events = ["Sleep", "Wake"]
+#+end_src
+
+This listens to both ~Sleep~ and ~Wake~ events.
+
+The ~sytter_power_event~ variable is set with the event that was published.  See
+~PowerEvent~ for all possible values, but be mindful that support is limited
+currently.  The strings used are from the exact ~enum~ values (e.g. ~Sleep~).
 
 *** Shell
 
 The Shell Sytter component allows shell invocations to do virtually any task.
 
 Shell components expose context variables via environment variables prefixed
-with =sytter_=.
+with ~sytter_~.
+
+You can read a variable with ~sytter-vars var1 var2...~.  This expects the
+~sytter_~ prefix - the prefix is not assumed.
+
+Writing variables is done with ~sytter-var-write var-name~.  Note that this is
+the variable name and not its value.  So if our variable name is ~sytter_foo~,
+the invocation would be ~sytter-var-write sytter_foo~.
+
+From the example in [[./examples/bluetooth-disabled-on-sleep.toml]]:
+
+#+begin_src sh :results none :exports code
+set -euo pipefail
+sytter-vars
+sytter_bluetooth_enabled_at_sleep="${sytter_bluetooth_enabled_at_sleep:-}"
+echo "Power event: '$sytter_power_event' "
+if [[ "$sytter_power_event" == "Sleep" ]]; then
+  # Store the original Bluetooth value so we can put it back when this is done.
+  sytter_bluetooth_enabled_at_sleep="$(blueutil --power)"
+  sytter-var-write sytter_bluetooth_enabled_at_sleep
+  blueutil --power 0
+else
+  sytter-vars sytter_bluetooth_enabled_at_sleep
+  enabled_text="$(
+    [[ "$sytter_bluetooth_enabled_at_sleep" == '1' ]] \
+      && printf '%s' 'enabled' \
+      || printf '%s' 'disabled'
+  )"
+  echo "Bluetooth was $enabled_text ($sytter_bluetooth_enabled_at_sleep) when sleep started, so it will be $enabled_text now."
+  # Don't blindly enable Bluetooth - if we had it off before, keep it off now.
+  blueutil --power "$sytter_bluetooth_enabled_at_sleep"
+fi
+#+end_src
+
+Each script invocation is separate from the last, so we can't really store or
+export a variable that would be present between runs.  In this example, we want
+to only re-enable Bluetooth if the system had it on before going to sleep - this
+way we don't enable Bluetooth when it wasn't desired to be on in the first
+place.
+
+~sytter-var-write sytter_bluetooth_enabled_at_sleep~ reads the variable into
+~sytter_bluetooth_enabled_at_sleep~ for us.  On the wake up run, we use
+~sytter-vars sytter_bluetooth_enabled_at_sleep~ to read the value we stored when
+the system was going to sleep.
 
 * Design
 ** Problem Space
@@ -245,12 +379,41 @@ shared state.
 
 All values are =Strings= and must be parsed for non-String values.
 
+*** API
+
+There is a state management API under ~/state~.  The API is in its infancy
+currently.  There is no authentication for it, but there is intention to add it.
+
+At the moment, all state is global.  If there is interest there could be
+component or Sytter specific variables in the future.
+
++ ~GET /state~ :: This returns a payload of all of the variables.  This can be
+  in a text form of lines with ~key=value~, or it could be JSON.  Use your
+  ~Accept~ header to control the format.
++ ~POST /state~ :: This takes a JSON body of an object with ~key~ and ~value~
+  fields.  An example is ~{ "key": "name", "value": "Alice" }~.  This uses
+  "upsert" behavior, meaning the value is inserted or, if already present,
+  updated in place.  Both ~key~ and ~value~ must be strings.
+
 *** =Shell=
 
 The =Shell= components provide some helper shell functions for reading and
 writing state.  At time of writing these functions only support Bash.  Other
 shells can be supported by default as well as provide a generalized mechanism in
 which one can provide their own helpers for unsupported shells.
+
++ ~sytter-vars~ :: Reads all variables from the Sytter server's state and sets
+  them as environment variables for the script.  It is recommended when creating
+  variables to prefix them with ~sytter_~ to both avoid collisions and
+  ambiguity.  A future version might only load one variable.
++ ~sytter-var-write~ :: This takes the name of a single variable to write.  Be
+  mindful that you are not passing values.  So you can use ~sytter-var-write
+  foo~ to write the ~foo~ variable.  One could use ~sytter-var-write USER~ to
+  write the ~USER~ variable present on many Unix shells.  It is recommended to
+  prefix variables with ~sytter_~ to avoid unintended collisions and potential
+  ambiguity in finding what variables are under your direct control.
+
+The exact code for these functions resides in [[file:./src/shell-functions.sh]].
 
 **** Reading State
 
@@ -268,15 +431,14 @@ echo "Bluetooth enabled? $sytter_bluetooth_enabled"
 
 **** Writing State
 
-The =sytter-write= function takes a variable name and a value.
+The =sytter-var-write= function takes a variable name and a value.
 
 The example below writes the results of =blueutil --power= to the
 =sytter_bluetooth_enabled= variable.
 
 #+begin_src shell :results none :exports code
-sytter-write sytter_bluetooth_enabled $(blueutil --power)
+sytter-var-write sytter_bluetooth_enabled $(blueutil --power)
 #+end_src
-
 
 * Roadmap
 ** Respond to kill signals
@@ -294,7 +456,8 @@ give up on executors.
 Provide other machinery for daemonization. This could mean adding logs, a log
 destination, additional configuration, etc.
 
-** Variables
+** DONE Variables
+CLOSED: [2025-02-14 Fri 06:54]
 
 We need a way for Sytters to govern their own state and possibly a global state.
 This way Sytter components can have a decoupled means of communicating with each
@@ -377,6 +540,8 @@ treatment, and thus support is poor to outright refused. As a mission statement
 we support symlinks. Integration tests will include a symlink test.
 
 ** Support runtime reloading of Sytters
+
+This is related to [[Respond to kill signals]].
 
 This can be done via file watches but really we can just listen for =SIGHUP=.
 More importantly for this item: We need to be able to tear down Sytters and

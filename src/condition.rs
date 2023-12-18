@@ -1,8 +1,13 @@
-use crate::error::AppError;
+use dyn_clone::DynClone;
+
+use crate::{config::Config, error::AppError};
 use core::fmt::Debug;
 
+#[typetag::serde(tag = "type")]
 pub trait Condition:
-    Debug + Sync + Send + serde_traitobject::Deserialize
+    Debug + Sync + Send + DynClone
 {
-    fn check_condition(&self) -> Result<bool, AppError>;
+    fn check_condition(&self, config: &Config) -> Result<bool, AppError>;
 }
+
+dyn_clone::clone_trait_object!(Condition);
