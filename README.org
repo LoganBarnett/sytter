@@ -268,15 +268,14 @@ echo "Bluetooth enabled? $sytter_bluetooth_enabled"
 
 **** Writing State
 
-The =sytter-write= function takes a variable name and a value.
+The =sytter-var-write= function takes a variable name and a value.
 
 The example below writes the results of =blueutil --power= to the
 =sytter_bluetooth_enabled= variable.
 
 #+begin_src shell :results none :exports code
-sytter-write sytter_bluetooth_enabled $(blueutil --power)
+sytter-var-write sytter_bluetooth_enabled $(blueutil --power)
 #+end_src
-
 
 * Roadmap
 ** Respond to kill signals

@@ -14,7 +14,16 @@ script = "true"
 
 [[execute]]
 kind = "shell"
-script = "blueutil --power 0"
+script = """\
+if [[ sytter_power_event == \"Sleep\" ]]; then
+  sytter_bluetooth_enabled_at_sleep=$(blueutil --power)
+  sytter-var-write sytter_bluetooth_enabled_at_sleep
+  blueutil --power 0
+else
+  sytter-vars sytter_bluetooth_enabled_at_sleep
+  blueutil --power $sytter_bluetooth_enabled_at_sleep
+fi
+"""
 
 [[failure]]
 kind = "shell"

@@ -1,13 +1,36 @@
 use crate::error::AppError;
 use std::process::Command;
 
+// We could lazy_static this but eventually it'll become configurable.
+pub fn shell_communication_functions() -> String {
+    include_str!("shell-functions.sh").to_string()
+}
+
 pub fn shell_exec_check(
     shell: &String,
     expected_exit_codes: &Vec<i32>,
     script: &String,
+    id: &String,
 ) -> Result<bool, AppError> {
     let output = Command::new(shell)
         .args(["-c", script])
+        // This requires curl, which isn't the most portable.  This is a rich
+        // location for a better contribution.  Some possibilities:
+        // 1. Use a Unix socket.  This would require writing
+        // a token if we were to make it secure.  This might not be portable on
+        // Windows systems.
+        // 2. Record the PID, and run Sytter again (or some derivative binary).
+        // The binary can then communicate via HTTP or a socket as needed, with
+        // a preference towards HTTP for portability.
+        // 3. Record the PID, Write to a state file, and send a kill signal to
+        // the Sytter PID in order to make Sytter reload the state file.  Of all
+        // of the options is is perhaps the least preferred.  We have some
+        // security, ownership, and cleanup concerns that would need to be
+        // addressed.
+        .envs([
+            ("sytter_token", id.clone()),
+            ("sytter_port", "1111".to_string()),
+        ])
         .output()
         .map_err(AppError::ShellSpawnError)?;
     // TODO: debug-log the shell outputs.
@@ -24,12 +47,21 @@ pub fn from_utf8(v: &Vec<u8>) -> Result<String, AppError> {
         .map_err(AppError::ShellUtf8ConversionError)
 }
 
+pub fn with_shell_functions(script: &String) -> String {
+    format!("{}\n{}", shell_communication_functions(), script)
+}
+
 pub fn shell_exec_outputs(
     shell: &String,
     script: &String,
+    id: &String,
 ) -> Result<(String, String), AppError> {
     Command::new(shell)
         .args(["-c", script])
+        .envs([
+            ("sytter_token", id.clone()),
+            ("sytter_port", "1111".to_string()),
+        ])
         .output()
         .map_err(AppError::ShellSpawnError)
         .and_then(|output| {
