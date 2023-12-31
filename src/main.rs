@@ -14,8 +14,6 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
-#[cfg(target_os = "macos")]
-mod macos_bindings;
 mod condition;
 mod config;
 mod contrib;
@@ -24,6 +22,8 @@ mod error;
 mod executor;
 mod failure;
 mod logging;
+#[cfg(target_os = "macos")]
+mod macos_bindings;
 #[cfg(target_os = "macos")]
 mod power_macos;
 mod shell;
