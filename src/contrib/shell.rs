@@ -1,6 +1,7 @@
 use log::{error, trace};
 use serde::Deserialize;
 use toml::Table;
+use uuid::Uuid;
 
 use crate::{
     condition::Condition,
@@ -33,7 +34,7 @@ pub fn shell_condition_toml_deserialize(
     section_data: &Table,
 ) -> Result<Box<dyn Condition>, AppError> {
     Ok(Box::new(ShellCondition {
-        id: "1234".to_string(),
+        id: Uuid::new_v4().to_string(),
         script: section_data
             .get("script")
             .and_then(|x| x.as_str())
@@ -77,7 +78,7 @@ pub fn shell_executor_toml_deserialize(
     section_data: &Table,
 ) -> Result<Box<dyn Executor>, AppError> {
     Ok(Box::new(ShellExecutor {
-        id: "5678".to_string(),
+        id: Uuid::new_v4().to_string(),
         expected_exit_codes: vec_i32_des(
             section_data.get("expected_exit_codes"),
         ),
@@ -122,7 +123,7 @@ pub fn shell_failure_toml_deserialize(
     section_data: &Table,
 ) -> Result<Box<dyn Failure>, AppError> {
     Ok(Box::new(ShellFailure {
-        id: "9012".to_string(),
+        id: Uuid::new_v4().to_string(),
         expected_exit_codes: vec_i32_des(
             section_data.get("expected_exit_codes"),
         ),
