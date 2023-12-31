@@ -29,7 +29,7 @@ pub fn shell_exec_check(
         // addressed.
         .envs([
             ("sytter_token", id.clone()),
-            ("sytter_port", "1111".to_string()),
+            ("sytter_port", "11110".to_string()),
         ])
         .output()
         .map_err(AppError::ShellSpawnError)?;

@@ -21,6 +21,7 @@ mod deserialize;
 mod error;
 mod executor;
 mod failure;
+mod http_server;
 mod logging;
 #[cfg(target_os = "macos")]
 mod macos_bindings;
