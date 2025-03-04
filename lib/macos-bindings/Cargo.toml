@@ -1,0 +1,36 @@
+[package]
+name = "sytter-macos-bindings"
+version = "0.1.0"
+authors = ["Logan Barnett <logustus@gmail.com>"]
+edition = "2021"
+
+# See https://doc.rust-lang.org/cargo/reference/profiles.html for more about
+# these build profiles.
+[profile.dev]
+# Prevent 36GB target/debug directories.
+debug = false
+
+[profile.release]
+debug = false
+# Disable in CI using CARGO_INCREMENTAL=0.
+incremental = true
+
+[build-dependencies]
+bindgen = "=0.71.1"
+# bindgen = {git = "https://github.com/LoganBarnett/rust-bindgen.git", ref = "0e8000e2d62d5c5b067d2b0ea0d4fc553c9712a0"}
+# Give us a generalized logger.
+log = "=0.4.22"
+# Logging should always go to stderr. Reserve stdout for potentially parsable
+# output.
+stderrlog = "=0.6.0"
+
+[dependencies]
+# num and friends allow us to convert numbers into enums, which is useful for
+# working with native bindings.
+num-derive = "=0.4.2"
+num = "=0.4.3"
+num-traits = "=0.2.19"
+# Handles messaging with Objective-C message sending of objects.
+objc = "0.2.7"
+objc2 = "0.5.2"
+objc2-foundation = "0.2.2"

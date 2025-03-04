@@ -14,7 +14,30 @@ script = "true"
 
 [[execute]]
 kind = "shell"
-script = "blueutil --power 0"
+script = """\
+set -euo pipefail
+sytter-vars
+echo \"Power event: '$sytter_power_event' \"
+if [[ \"$sytter_power_event\" == \"Sleep\" ]]; then
+  # Store the original Bluetooth value so we can put it back when this is done.
+  sytter_bluetooth_enabled_at_sleep=\"$(blueutil --power)\"
+  sytter-var-write sytter_bluetooth_enabled_at_sleep
+  blueutil --power 0
+elif [[ \"$sytter_power_event\" == \"Wake\" ]]; then
+  sytter_bluetooth_enabled_at_sleep=\"${sytter_bluetooth_enabled_at_sleep:-}\"
+  sytter-vars sytter_bluetooth_enabled_at_sleep
+  enabled_text=\"$(
+    [[ \"$sytter_bluetooth_enabled_at_sleep\" == '1' ]] \
+      && printf '%s' 'enabled' \
+      || printf '%s' 'disabled'
+  )\"
+  echo \"Bluetooth was $enabled_text ($sytter_bluetooth_enabled_at_sleep) when sleep started, so it will be $enabled_text now.\"
+  # Don't blindly enable Bluetooth - if we had it off before, keep it off now.
+  blueutil --power \"$sytter_bluetooth_enabled_at_sleep\"
+else
+ echo \"Unknown power event '$sytter_power_event'.\"
+fi
+"""
 
 [[failure]]
 kind = "shell"

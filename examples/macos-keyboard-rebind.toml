@@ -1,0 +1,36 @@
+name = "macOS external keyboard rebind"
+description = """\
+When an external keyboard is connected to a macOS machine, apply key \
+remapping.  hidutil can be set to match the external keyboard via --matching \
+and this works until the keyboard disconnects or the machine otherwise restarts \
+due to a bug introduced in some recent veresions of macOS.\
+"""
+
+[[trigger]]
+kind = "device-connection"
+events = ["Add"]
+
+[[condition]]
+kind = "shell"
+script = "true"
+
+[[execute]]
+kind = "shell"
+script = """\
+if [[ \
+  $sytter_device_event_type == \"Add\" \
+  && $sytter_device_event_device_name !~ /apple/i \
+]]; then
+  hidutil --matching '' --set ''
+fi
+"""
+
+[[failure]]
+kind = "shell"
+# Send a local email (with `sendmail`) to tell us about it.
+script = """\
+printf '%s\n' 'Subject: Error in binding keyboard specific remappings' \
+       '' \
+       'Failed trying to remap keyboard during $action! See $LOG for details.' \
+| sendmail $USER \
+"""

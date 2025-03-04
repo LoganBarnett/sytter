@@ -4,21 +4,31 @@ version = "0.1.0"
 authors = ["Logan Barnett <logustus@gmail.com>"]
 edition = "2021"
 
+# See https://doc.rust-lang.org/cargo/reference/profiles.html for more about
+# these build profiles.
+[profile.dev]
+# Prevent 36GB target/debug directories.
+debug = false
+
+[profile.release]
+debug = false
+# Disable in CI using CARGO_INCREMENTAL=0.
+incremental = true
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[build-dependencies]
-bindgen = "0.69.1"
-# bindgen = {git = "https://github.com/LoganBarnett/rust-bindgen.git", ref = "0e8000e2d62d5c5b067d2b0ea0d4fc553c9712a0"}
-
 [dependencies]
+sytter-macos-bindings = { path = "./lib/macos-bindings" }
+actix-web = "4.9.0"
 # Allow declaring async functions in traits.  Doing non-trivial code in Rust
 # basically makes this crate mandatory.
 async-trait = "*"
 # Command Line Argument Parsing.
-clap = { version = "4.3.19", features = ["derive"] }
+clap = { version = "=4.3.19", features = ["derive"] }
 # Allow us to increase verbosity with additional v's in -v. For example, we can
 # use -v for verbose, -vv for extra verbose, and -vvv for even more verobisty.
-clap-verbosity-flag = "2.0.1"
+clap-verbosity-flag = "=2.0.1"
+# cargo-clippy = "*"
 # In order to reference parts of cron scheduling that tokio-cron-scheduler uses,
 # we need to explicitly declare cron as a dependency as well.
 cron = "*"
@@ -26,36 +36,44 @@ cron = "*"
 futures = "*"
 # Allows us to initialize complex data (like a HashMap with stuff in it) that is
 # globally accessible.
-lazy_static = "1.4.0"
-# Give us a generalized logger.
-log = "*"
+lazy_static = "=1.4.0"
+log = "=0.4.22"
 # num and friends allow us to convert numbers into enums, which is useful for
 # working with native bindings.
-num-derive = "0.4.1"
-num = "0.4.1"
-num-traits = "0.2.17"
+num-derive = "=0.4.2"
+num = "=0.4.3"
+num-traits = "=0.2.19"
 # Handles messaging with Objective-C message sending of objects.
-objc = "*"
+objc = "0.2.7"
 # Serde gives us generalized serializing/deserializing, which we use for reading
 # in Sytter configurations.
-serde = { version = "*", features = ["derive"] }
+serde = { version = "*", features = ["derive", "rc"] }
 # Convert from one format to another, I think. I need to check if this is
 # actually necessary. It was lifted from another project.
 serdeconv = "*"
-# Allow us to deserialize traits so sytter components can vary.
-serde_traitobject= "*"
-# Logging should always go to stderr. Reserve stdout for potentially parsable
-# output.
-stderrlog = "*"
+stderrlog = "=0.6.0"
 # strum and friends allows us to easily convery Strings to enums.
-strum = "0.25"
-strum_macros = "0.25.3"
+strum = "=0.25"
+strum_macros = "=0.25.3"
 # Give us a concurrency model. Needed for handling events.
 #
 # Look here if we're trying to get size down. Unsure what features we'll need
 # currently. I just want it to work.
-tokio = { version = "1.25.0", features = ["full"] }
+tokio = { version = "=1.25.0", features = ["full"] }
 # For handling cron parsing and triggering.
-tokio-cron-scheduler = "0.9.4"
+tokio-cron-scheduler = "=0.9.4"
 # A serde handler for toml files, so we can read sytter definitions.
 toml = "*"
+uuid = { version = "=1.6.1", features = ["v4"] }
+typetag = "=0.2.16"
+rand = "0.8.5"
+objc2 = "0.6.0"
+objc2-foundation = "0.3.0"
+job_scheduler_ng = "2.0.5"
+tap = "1.0.1"
+dyn-clone = "1.0.18"
+
+[workspace]
+members = [
+  "lib/macos-bindings"
+]

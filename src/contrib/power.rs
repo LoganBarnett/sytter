@@ -1,13 +1,17 @@
-use crate::{error::AppError, trigger::Trigger};
-use async_trait::async_trait;
+use crate::state::{State, SytterVariable};
+use crate::{
+    error::AppError,
+    trigger::Trigger,
+    macos::power::sleep_listen_start,
+};
 use log::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, SyncSender};
-use strum_macros::EnumString;
+use strum_macros::{Display, EnumString};
 use toml::Table;
 
-#[derive(Clone, Debug, Deserialize, EnumString, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Display, EnumString, PartialEq, Serialize)]
 pub enum PowerEvent {
     Boot,     // Not supported.
     Shutdown, // Not supported.
@@ -16,7 +20,7 @@ pub enum PowerEvent {
     Unknown,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PowerTrigger {
     pub events: Vec<PowerEvent>,
 }
@@ -57,56 +61,58 @@ pub fn power_trigger_toml_deserialize(
     }))
 }
 
-#[async_trait]
+#[typetag::serde]
 impl Trigger for PowerTrigger {
-    async fn trigger_await(
-        &mut self,
-        send_to_sytter: SyncSender<String>,
-        _receive_from_sytter: Receiver<String>,
-    ) -> Result<(), AppError> {
-        let send_to_sytter_threaded = send_to_sytter.clone();
-        if cfg!(target_os = "macos") {
-            info!("Listening for power event {:?}", self.events);
-            let events = self.events.clone();
-            // TODO: Connect plumbing such that any trigger can be shut down via
-            // a cleanup function that is returned when listening.
-            let _cleanup_fn =
-                crate::power_macos::sleep_listen_start(move |p: PowerEvent| {
-                    trace!(
-                        "Signaling sytter from PowerTrigger for event {:?}.",
-                        p,
-                    );
-                    if events.contains(&p) {
-                        match send_to_sytter_threaded.send("foo".to_string()) {
-                            Ok(_) => trace!(
-                                "Signal to sytter from PowerTrigger successful!"
-                            ),
-                            Err(e) => trace!(
-                                "Error trigging sytter from PowerTrigger: {:?}",
-                                e
-                            ),
-                        };
-                    } else {
-                        trace!(
-                            "Power event {:?} skipped because it is not in {:?}",
-                            p,
-                            events,
-                        );
-                    }
-                })?;
-            trace!("Setup listener for power events.");
-            // None of this is called at the right time. trigger_await is async
-            // so we can make the setup happen on its own thread. In the case of
-            // power_macos we already have a thread. I'm not sure if that
-            // overhead is necessary but whatever.
-            // This is the event to clean up. Just block on it.
-            // let _ = receive_from_sytter.recv();
-            // debug!("Sytter is closing. Cleaning up power hooks...");
-            // cleanup_fn()?;
-            // debug!("Power cleanup done!");
-        } else {
-            error!("OS not supported for power events!");
-        }
-        Ok(())
+  fn trigger_await(
+    &mut self,
+    send_to_sytter: SyncSender<String>,
+    _receive_from_sytter: Receiver<String>,
+  ) -> Result<(), AppError> {
+    let send_to_sytter_threaded = send_to_sytter.clone();
+    if cfg!(target_os = "macos") {
+      info!("Listening for power event {:?}", self.events);
+      let events = self.events.clone();
+      // TODO: Connect plumbing such that any trigger can be shut down via
+      // a cleanup function that is returned when listening.
+      let _cleanup_fn =
+        sleep_listen_start(Box::new(move |p: PowerEvent| {
+          trace!(
+            "Signaling sytter from PowerTrigger for event {:?}.",
+            p,
+          );
+          if events.contains(&p) {
+            State::set_variable(SytterVariable {
+              key: "sytter_power_event".into(),
+              value: p.to_string(),
+            });
+            match send_to_sytter_threaded.send("foo".to_string()) {
+              Ok(_) => trace!("Signal to sytter from PowerTrigger successful!"),
+              Err(e) => trace!(
+                "Error triggering sytter from PowerTrigger: {:?}",
+                e
+              ),
+            };
+          } else {
+            trace!(
+              "Power event {:?} skipped because it is not in {:?}",
+              p,
+              events,
+            );
+          }
+        }))?;
+      trace!("Setup listener for power events.");
+      // None of this is called at the right time. trigger_await is async
+      // so we can make the setup happen on its own thread. In the case of
+      // power_macos we already have a thread. I'm not sure if that
+      // overhead is necessary but whatever.
+      // This is the event to clean up. Just block on it.
+      // let _ = receive_from_sytter.recv();
+      // debug!("Sytter is closing. Cleaning up power hooks...");
+      // cleanup_fn()?;
+      // debug!("Power cleanup done!");
+    } else {
+      error!("OS not supported for power events!");
     }
+    Ok(())
+  }
 }
