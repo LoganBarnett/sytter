@@ -6,6 +6,10 @@
   };
 
   outputs = { self, nixpkgs, rust-overlay }@inputs: let
+    lib = nixpkgs.lib;
+    systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+    forEachSystem = lib.genAttrs systems;
+    pkgsFor = system: import nixpkgs { inherit system; };
     packages = (pkgs: let
       rust = pkgs.rust-bin.stable.latest.default.override {
         extensions = [
@@ -34,6 +38,7 @@
       pkgs.darwin.apple_sdk.frameworks.IOKit
     ]);
   in {
+    darwinModules.default = ./nix/nix-darwin.nix;
 
     devShells.aarch64-darwin.default = let
       system = "aarch64-darwin";
@@ -48,6 +53,17 @@
       shellHook = ''
       '';
     };
+
+    overlays.default = final: prev: {
+      sytter = final.callPackage ./nix/package.nix { };
+    };
+
+    packages = forEachSystem (system:
+      let pkgs = pkgsFor system;
+      in {
+        default = pkgs.callPackage ./nix/package.nix { };
+        sytter = self.packages.${system}.default;
+      });
 
   };
 }

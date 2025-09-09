@@ -259,6 +259,52 @@ place.
 ~sytter-vars sytter_bluetooth_enabled_at_sleep~ to read the value we stored when
 the system was going to sleep.
 
+* Installation And Usage
+
+Obligatory ~--help~ output:
+
+#+begin_src sh :results output :exports results
+cargo run --release -- --help
+#+end_src
+
+#+RESULTS:
+: Babysit your system with IFTTT automation.
+:
+: Usage: sytter [OPTIONS]
+:
+: Options:
+:   -s, --sytters-path <SYTTERS_PATH>
+:   -v, --verbose...                   More output per occurrence
+:   -q, --quiet...                     Less output per occurrence
+:   -h, --help                         Print help
+
+* nix-darwin with flakes
+
+In your flake inputs:
+#+begin_src nix :results none :exports code
+sytter = {
+  url = "github:LoganBarnett/sytter";
+};
+
+#+end_src
+
+In your Nix module, assuming you provided the entirety of your Flake inputs as
+~flake-inputs~:
+#+begin_src nix :results none :exports code
+{ flake-inputs, ... }: {
+  imports = [
+    flake-inputs.sytter.darwinModules.default
+  ];
+  nixpkgs.overlays = [
+    flake-inputs.sytter.overlays.default
+  ];
+  services.sytter = {
+    enable = true;
+    # TODO: Show off some config!  But only after we've moved to YAML.
+  };
+}
+#+end_src
+
 * Design
 ** Problem Space
 
