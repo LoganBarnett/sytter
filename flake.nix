@@ -1,7 +1,7 @@
 {
   description = "";
   inputs = {
-    nixpkgs.url = github:NixOS/nixpkgs/nixpkgs-unstable;
+    nixpkgs.url = github:NixOS/nixpkgs/25.11;
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
@@ -31,11 +31,6 @@
       rust
       pkgs.rustfmt
       pkgs.rustup
-    ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-      pkgs.darwin.apple_sdk.frameworks.Security
-      pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-      pkgs.darwin.apple_sdk.frameworks.CoreServices
-      pkgs.darwin.apple_sdk.frameworks.IOKit
     ]);
   in {
     darwinModules.default = ./nix/nix-darwin.nix;
