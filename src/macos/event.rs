@@ -23,7 +23,7 @@ use sytter_macos_bindings::{
   kCFRunLoopCommonModes,
 };
 use lazy_static::lazy_static;
-use log::*;
+use tracing::*;
 use std::any::{Any, type_name};
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};

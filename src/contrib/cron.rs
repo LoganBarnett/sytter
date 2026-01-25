@@ -1,6 +1,6 @@
 use crate::{error::AppError, trigger::Trigger};
 use cron::Schedule;
-use log::{debug, info, trace};
+use tracing::{debug, info, trace};
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{Receiver, SyncSender};
 use job_scheduler_ng::{Job, JobScheduler};

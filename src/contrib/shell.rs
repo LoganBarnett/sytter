@@ -1,4 +1,4 @@
-use log::{error, trace};
+use tracing::{error, trace};
 use serde::{Deserialize, Serialize};
 use toml::Table;
 use uuid::Uuid;

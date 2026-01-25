@@ -2,7 +2,7 @@ use std::{path::{Path, PathBuf}, sync::{Arc, Mutex}};
 
 use config::{cli_parse, config_cli_merge, env_config_load};
 use error::AppError;
-use log::*;
+use tracing::*;
 use logging::logger_init;
 use sytter::sytter_load;
 use http_server::http_server;
@@ -47,8 +47,8 @@ fn sytter_paths(base_path: &String) -> Result<Vec<PathBuf>, AppError> {
 async fn main() -> Result<(), AppError> {
   let env_config = env_config_load()?;
   let cli_config = cli_parse()?;
-  let config = config_cli_merge(env_config, cli_config);
-  logger_init(config.verbosity.log_level())?;
+  let config = config_cli_merge(env_config, cli_config)?;
+  logger_init(config.log_level)?;
   debug!("Using config: {:?}", config);
   for file in sytter_paths(&config.sytters_path)? {
     info!("Starting sytter '{}'...", file.display());

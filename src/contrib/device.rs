@@ -3,7 +3,7 @@ use crate::{
   trigger::Trigger,
   macos::device::device_connection_listen_start,
 };
-use log::*;
+use tracing::*;
 use serde::{Deserialize, Serialize};
 use std::any::type_name;
 use std::str::FromStr;

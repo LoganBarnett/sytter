@@ -9,7 +9,7 @@ use crate::{
         },
     }, error::AppError, executor::Executor, failure::Failure, trigger::Trigger
 };
-use log::*;
+use tracing::*;
 use serde::Deserialize;
 use std::{
     fs::read_to_string,

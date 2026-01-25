@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use log::*;
+use tracing::*;
 use crate::state::{State, SytterVariable};
 use actix_web::{
   http::header, web::{self, Data}, App, HttpRequest, HttpResponse, HttpServer
