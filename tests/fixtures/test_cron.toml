@@ -1,0 +1,25 @@
+name = "test_cron_trigger"
+description = "Integration test for cron trigger - runs every 5 seconds"
+
+[[trigger]]
+kind = "cron"
+# Run every 5 seconds
+cron = "*/5 * * * * *"
+
+[[condition]]
+kind = "shell"
+# Always return true
+script = "true"
+
+[[execute]]
+kind = "shell"
+# Write a timestamp to a file to track executions
+script = """
+echo "$(date +%s)" >> "$SYTTER_TEST_OUTPUT"
+"""
+
+[[failure]]
+kind = "shell"
+script = """
+echo "FAILURE: $?" >> "$SYTTER_TEST_OUTPUT"
+"""

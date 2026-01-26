@@ -66,6 +66,6 @@ async fn main() -> Result<(), AppError> {
       sytter.start(&config_copy);
     });
   }
-  http_server().await?;
+  http_server(config.http_port).await?;
   Ok(())
 }

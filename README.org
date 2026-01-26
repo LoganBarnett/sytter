@@ -433,6 +433,39 @@ currently.  There is no authentication for it, but there is intention to add it.
 At the moment, all state is global.  If there is interest there could be
 component or Sytter specific variables in the future.
 
+**** Health Check Endpoints
+
+Sytter provides standard health check endpoints following common conventions:
+
++ ~GET /health~ :: Standard REST API health check endpoint. Returns HTTP 200 OK
+  with JSON body: ~{ "status": "ok", "version": "0.1.0" }~. This is a basic
+  liveness check indicating the HTTP server is responding.
+
++ ~GET /healthz~ :: Kubernetes/Google convention health check endpoint (the "z"
+  suffix avoids collisions with application routes). Returns the same response
+  as ~/health~. Use this endpoint for Kubernetes liveness probes or other
+  container orchestration systems.
+
+Both endpoints return the same response and can be used interchangeably. The
+~/health~ endpoint follows standard REST conventions, while ~/healthz~ provides
+compatibility with Kubernetes and other container orchestration platforms.
+
+Example response:
+#+begin_src json
+{
+  "status": "ok",
+  "version": "0.1.0"
+}
+#+end_src
+
+Example usage:
+#+begin_src sh
+curl http://localhost:8080/health
+curl http://localhost:8080/healthz
+#+end_src
+
+**** State Management Endpoints
+
 + ~GET /state~ :: This returns a payload of all of the variables.  This can be
   in a text form of lines with ~key=value~, or it could be JSON.  Use your
   ~Accept~ header to control the format.
