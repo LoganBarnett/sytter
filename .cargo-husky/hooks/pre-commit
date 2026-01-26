@@ -1,0 +1,24 @@
+#!/bin/sh
+# Pre-commit hook to format Rust files with rustfmt
+
+# Get list of staged .rs files
+staged_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.rs$')
+
+if [ -z "$staged_files" ]; then
+  # No Rust files to format
+  exit 0
+fi
+
+echo "Running rustfmt on staged files..."
+
+# Run rustfmt on each staged file
+for file in $staged_files; do
+  if [ -f "$file" ]; then
+    rustfmt "$file"
+    # Re-add the file to staging after formatting
+    git add "$file"
+  fi
+done
+
+echo "Formatting complete!"
+exit 0

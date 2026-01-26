@@ -18,11 +18,8 @@ lazy_static! {
 }
 
 impl State {
-
   pub fn new() -> Self {
-    State {
-      variables: vec!(),
-    }
+    State { variables: vec![] }
   }
 
   pub fn get_variables() -> Vec<SytterVariable> {
@@ -50,14 +47,9 @@ impl State {
       .lock()
       .unwrap() // If this got poisoned, there's no limping by, just panic.
       ;
-    match state
-      .variables
-      .iter_mut()
-      .find(|v| variable.key == v.key)
-    {
+    match state.variables.iter_mut().find(|v| variable.key == v.key) {
       Some(v) => v.value = variable.value.clone(),
       None => state.variables.push(variable.clone()),
     };
   }
-
 }

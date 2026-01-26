@@ -1,11 +1,14 @@
-use std::{path::{Path, PathBuf}, sync::{Arc, Mutex}};
+use std::{
+  path::{Path, PathBuf},
+  sync::{Arc, Mutex},
+};
 
 use config::{cli_parse, config_cli_merge, env_config_load};
 use error::AppError;
-use tracing::*;
+use http_server::http_server;
 use logging::logger_init;
 use sytter::sytter_load;
-use http_server::http_server;
+use tracing::*;
 
 use crate::state::State;
 
@@ -23,24 +26,26 @@ mod macos;
 // #[cfg(target_os = "macos")]
 // mod macos_bindings;
 mod shell;
+mod state;
 mod sytter;
 mod trigger;
-mod state;
 
 fn sytter_paths(base_path: &String) -> Result<Vec<PathBuf>, AppError> {
-    let path = Path::new(base_path);
-    Ok(if path.is_dir() {
-        From::from(
-            path.read_dir()
-                .and_then(|dir| {
-                    dir.map(|res| res.map(|entry| path.join(entry.path())))
-                        .collect::<Result<Vec<PathBuf>, _>>()
-                })
-                .map_err(AppError::SyttersDirInvalidError)?,
-        )
-    } else {
-        vec![path.to_path_buf()]
-    })
+  let path = Path::new(base_path);
+  Ok(if path.is_dir() {
+    From::from(
+      path
+        .read_dir()
+        .and_then(|dir| {
+          dir
+            .map(|res| res.map(|entry| path.join(entry.path())))
+            .collect::<Result<Vec<PathBuf>, _>>()
+        })
+        .map_err(AppError::SyttersDirInvalidError)?,
+    )
+  } else {
+    vec![path.to_path_buf()]
+  })
 }
 
 #[tokio::main]
@@ -62,5 +67,5 @@ async fn main() -> Result<(), AppError> {
     });
   }
   http_server().await?;
-    Ok(())
+  Ok(())
 }

@@ -1,34 +1,18 @@
 #![cfg(target_os = "macos")]
 
-use num::FromPrimitive;
 use crate::{
-  error::AppError,
-  macos::event::{
-    refcon_callback,
-    listen_start,
-    CallbackData,
-    ListenResult,
-  },
   contrib::power::PowerEvent,
+  error::AppError,
+  macos::event::{listen_start, refcon_callback, CallbackData, ListenResult},
 };
+use num::FromPrimitive;
 use sytter_macos_bindings::{
-  AppleIoMessage,
-  AppleIoReturn,
-  IOAllowPowerChange,
-  IODeregisterForSystemPower,
-  IONotificationPortDestroy,
-  IONotificationPortRef,
-  IORegisterForSystemPower,
-  UInt32,
-  io_connect_t,
-  io_object_t,
-  io_service_t,
-  kIOMessageCanSystemSleep,
-  kIOMessageSystemHasPoweredOn,
-  kIOMessageSystemWillNotSleep,
-  kIOMessageSystemWillPowerOn,
-  kIOMessageSystemWillSleep,
-  kIOReturnSuccess,
+  io_connect_t, io_object_t, io_service_t, kIOMessageCanSystemSleep,
+  kIOMessageSystemHasPoweredOn, kIOMessageSystemWillNotSleep,
+  kIOMessageSystemWillPowerOn, kIOMessageSystemWillSleep, kIOReturnSuccess,
+  AppleIoMessage, AppleIoReturn, IOAllowPowerChange,
+  IODeregisterForSystemPower, IONotificationPortDestroy, IONotificationPortRef,
+  IORegisterForSystemPower, UInt32,
 };
 // use std::any::Any;
 /**
@@ -77,8 +61,8 @@ extern "C" fn power_change_callback(
     });
     // Be wary about what's passed as the power event.  A type mismatch won't be
     // caught until runtime.
-    let kernel_port: io_connect_t = refcon_callback(refcon_value, power_event)
-      .unwrap();
+    let kernel_port: io_connect_t =
+      refcon_callback(refcon_value, power_event).unwrap();
     trace!("Transmuted refcon to our closure.");
     // According to documentation here:
     // https://developer.apple.com/library/archive/qa/qa1340/_index.html
@@ -97,7 +81,7 @@ extern "C" fn power_change_callback(
       debug!("Power change notification successful!");
     } else {
       error!(
-            "Error ({:?}) allowing power change notification. \
+        "Error ({:?}) allowing power change notification. \
 is will keep the machine from sleeping for 30+ seconds. \
 ing kernel_port {:?} and notifiy_id {:?}",
         // TODO: unwrap or cast to an unknown type.
@@ -110,39 +94,40 @@ ing kernel_port {:?} and notifiy_id {:?}",
   // kIOMessageSystemWillPowerOn is before devices have power.  We don't want
   // to run at this point as it will block or fail.
   else if message_type == kIOMessageSystemWillPowerOn {
-      debug!("Got message kIOMessageSystemWillPowerOn.");
+    debug!("Got message kIOMessageSystemWillPowerOn.");
   }
   // kIOMessageSystemHasPoweredOn runs after devices have gotten power.  This
   // is where we want to do our work.
   else if message_type == kIOMessageSystemHasPoweredOn {
-      debug!("Got message kIOMessageSystemHasPoweredOn.");
+    debug!("Got message kIOMessageSystemHasPoweredOn.");
     refcon_callback(refcon_value, Box::new(PowerEvent::Wake)).unwrap();
-      // closure(Box::new(PowerEvent::Wake));
+    // closure(Box::new(PowerEvent::Wake));
   }
   // These should be no action - someone vetoed sleep.
   else if message_type == kIOMessageSystemWillNotSleep {
-      debug!("Got message kIOMessageSystemWillNotSleep.");
+    debug!("Got message kIOMessageSystemWillNotSleep.");
   }
 }
 
 #[cfg(target_os = "macos")]
 pub fn sleep_listen_start(
-    callback: impl FnMut(PowerEvent) -> () + Send + Sync + 'static,
+  callback: impl FnMut(PowerEvent) -> () + Send + Sync + 'static,
 ) -> Result<Box<dyn FnOnce() -> Result<(), AppError>>, AppError> {
   let stop_callback = listen_start(
     Box::new(
-      |notifier: &mut io_object_t, port_ref: &mut IONotificationPortRef, refcon: &mut usize|
-        unsafe {
-          trace!("port_ref in delegate: {:x?}", port_ref);
-          ListenResult::io_connect_t(IORegisterForSystemPower(
-            // This is tossed back to the callback, so we know which instance of
-            // the callback was invoked.
-            *refcon as *mut c_void,
-            &mut *port_ref,
-            Option::Some(power_change_callback),
-            &mut *notifier,
-          ))
-        }
+      |notifier: &mut io_object_t,
+       port_ref: &mut IONotificationPortRef,
+       refcon: &mut usize| unsafe {
+        trace!("port_ref in delegate: {:x?}", port_ref);
+        ListenResult::io_connect_t(IORegisterForSystemPower(
+          // This is tossed back to the callback, so we know which instance of
+          // the callback was invoked.
+          *refcon as *mut c_void,
+          &mut *port_ref,
+          Option::Some(power_change_callback),
+          &mut *notifier,
+        ))
+      },
     ),
     callback,
   )?;

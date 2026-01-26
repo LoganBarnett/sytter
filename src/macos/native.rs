@@ -2,8 +2,11 @@
  * This file contains any shared functionality between the various macOS native
  * operations that is performed by Sytter.
  ******************************************************************************/
-use crate::{
-  error::AppError,
+use crate::error::AppError;
+use std::ffi::{
+  c_void,
+  // CString,
+  // CStr,
 };
 use sytter_macos_bindings::{
   __CFDictionary,
@@ -25,11 +28,6 @@ use sytter_macos_bindings::{
   MACH_PORT_NULL,
 };
 use tracing::*;
-use std::ffi::{
-  c_void,
-  // CString,
-  // CStr,
-};
 
 #[allow(unused)]
 trait CustomCfDictionary {
@@ -38,7 +36,6 @@ trait CustomCfDictionary {
 }
 
 impl CustomCfDictionary for __CFDictionary {
-
   fn len(&self) -> usize {
     unsafe { CFDictionaryGetCount(self).try_into().unwrap() }
   }
@@ -82,7 +79,6 @@ impl CustomCfDictionary for __CFDictionary {
   //   }
   //   debug_thingy.finish()
   // }
-
 }
 
 // impl Into<CString> for [u8] {
@@ -92,19 +88,19 @@ impl CustomCfDictionary for __CFDictionary {
 // examples don't use it, and it segfaults when called.
 #[allow(dead_code)]
 pub fn mach_port() -> Result<u32, AppError> {
-    trace!("In mach_port.");
-    let mach_port = std::ptr::null_mut();
-    // It is not documented elsewhere.  I should be able just look for 0.
-    // TODO: Use IOMasterPort for macos <= 12.
-    trace!("IOMainPort({:?}, {:?})", MACH_PORT_NULL, mach_port);
-    let io_return = unsafe { IOMasterPort(MACH_PORT_NULL, mach_port) };
-    trace!("io_return is: {:?}", io_return);
-    if io_return == 0 {
-        return Err(AppError::MachPortRegistrationFailed());
-    }
-    let written_mach_port: u32 = unsafe { *mach_port };
-    trace!("mach_port is {:?}", written_mach_port);
-    Ok(written_mach_port)
+  trace!("In mach_port.");
+  let mach_port = std::ptr::null_mut();
+  // It is not documented elsewhere.  I should be able just look for 0.
+  // TODO: Use IOMasterPort for macos <= 12.
+  trace!("IOMainPort({:?}, {:?})", MACH_PORT_NULL, mach_port);
+  let io_return = unsafe { IOMasterPort(MACH_PORT_NULL, mach_port) };
+  trace!("io_return is: {:?}", io_return);
+  if io_return == 0 {
+    return Err(AppError::MachPortRegistrationFailed());
+  }
+  let written_mach_port: u32 = unsafe { *mach_port };
+  trace!("mach_port is {:?}", written_mach_port);
+  Ok(written_mach_port)
 }
 
 pub fn port_ref_create() -> Result<IONotificationPortRef, AppError> {
@@ -124,15 +120,13 @@ pub fn dict_set_i32(
   key: *mut c_void,
   value: i32,
 ) -> () {
-  let number_ref = unsafe { CFNumberCreate(
-    kCFAllocatorDefault,
-    kCFNumberSInt32Type,
-    value as *mut c_void,
-  ) };
-  unsafe { CFDictionarySetValue(
-    dict,
-    key,
-    number_ref as *mut c_void,
-  )};
+  let number_ref = unsafe {
+    CFNumberCreate(
+      kCFAllocatorDefault,
+      kCFNumberSInt32Type,
+      value as *mut c_void,
+    )
+  };
+  unsafe { CFDictionarySetValue(dict, key, number_ref as *mut c_void) };
   unsafe { CFRelease(number_ref as *mut c_void) };
 }
