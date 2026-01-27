@@ -2,7 +2,6 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
-
 // It looks like there is icrate for doing objective C binding generation that
 // might be really good.  I haven't looked into it much, and it would be really
 // great if it were also part of bindgen (the author admits as much).  This is
@@ -35,20 +34,20 @@
 include!("macos_bindings_emitted.rs");
 // http://fxr.watson.org/fxr/source/iokit/IOKit/IOReturn.h?v=xnu-1699.24.8#L48
 pub const fn err_system(x: u32) -> u32 {
-    (x & 0x3f) << 26
+  (x & 0x3f) << 26
 }
 pub const fn err_sub(x: u32) -> u32 {
-    (x & 0xfff) << 14
+  (x & 0xfff) << 14
 }
 pub const sys_iokit: u32 = err_system(0x38);
 pub const sys_iokit_common: u32 = err_sub(0x0);
 
 pub const fn iokit_common_msg(message: u32) -> u32 {
-    sys_iokit | sys_iokit_common | message
+  sys_iokit | sys_iokit_common | message
 }
 
 pub const fn iokit_common_err(sub: u32) -> u32 {
-    sys_iokit | sub
+  sys_iokit | sub
 }
 // Taken from:
 // https://opensource.apple.com/source/xnu/xnu-4570.71.2/iokit/IOKit/IOMessage.h
@@ -148,59 +147,59 @@ pub const kCFNumberSInt32Type: i64 = 0x3;
 // but the error still isn't helpful.
 #[repr(u32)]
 pub enum AppleIoReturn {
-    kIOReturnSuccess = kIOReturnSuccess,
-    kIOReturnError = kIOReturnError,
-    kIOReturnNoMemory = kIOReturnNoMemory,
-    kIOReturnNoResources = kIOReturnNoResources,
-    kIOReturnIPCError = kIOReturnIPCError,
-    kIOReturnNoDevice = kIOReturnNoDevice,
-    kIOReturnNotPrivileged = kIOReturnNotPrivileged,
-    kIOReturnBadArgument = kIOReturnBadArgument,
-    kIOReturnLockedRead = kIOReturnLockedRead,
-    kIOReturnLockedWrite = kIOReturnLockedWrite,
-    kIOReturnExclusiveAccess = kIOReturnExclusiveAccess,
-    kIOReturnBadMessageID = kIOReturnBadMessageID,
-    kIOReturnUnsupported = kIOReturnUnsupported,
-    kIOReturnVMError = kIOReturnVMError,
-    kIOReturnInternalError = kIOReturnInternalError,
-    kIOReturnIOError = kIOReturnIOError,
-    kIOReturnCannotLock = kIOReturnCannotLock,
-    kIOReturnNotOpen = kIOReturnNotOpen,
-    kIOReturnNotReadable = kIOReturnNotReadable,
-    kIOReturnNotWritable = kIOReturnNotWritable,
-    kIOReturnNotAligned = kIOReturnNotAligned,
-    kIOReturnBadMedia = kIOReturnBadMedia,
-    kIOReturnStillOpen = kIOReturnStillOpen,
-    kIOReturnRLDError = kIOReturnRLDError,
-    kIOReturnDMAError = kIOReturnDMAError,
-    kIOReturnBusy = kIOReturnBusy,
-    kIOReturnTimeout = kIOReturnTimeout,
-    kIOReturnOffline = kIOReturnOffline,
-    kIOReturnNotReady = kIOReturnNotReady,
-    kIOReturnNotAttached = kIOReturnNotAttached,
-    kIOReturnNoChannels = kIOReturnNoChannels,
-    kIOReturnNoSpace = kIOReturnNoSpace,
-    kIOReturnPortExists = kIOReturnPortExists,
-    kIOReturnCannotWire = kIOReturnCannotWire,
-    kIOReturnNoInterrupt = kIOReturnNoInterrupt,
-    kIOReturnNoFrames = kIOReturnNoFrames,
-    kIOReturnMessageTooLarge = kIOReturnMessageTooLarge,
-    kIOReturnNotPermitted = kIOReturnNotPermitted,
-    kIOReturnNoPower = kIOReturnNoPower,
-    kIOReturnNoMedia = kIOReturnNoMedia,
-    kIOReturnUnformattedMedia = kIOReturnUnformattedMedia,
-    kIOReturnUnsupportedMode = kIOReturnUnsupportedMode,
-    kIOReturnUnderrun = kIOReturnUnderrun,
-    kIOReturnOverrun = kIOReturnOverrun,
-    kIOReturnDeviceError = kIOReturnDeviceError,
-    kIOReturnNoCompletion = kIOReturnNoCompletion,
-    kIOReturnAborted = kIOReturnAborted,
-    kIOReturnNoBandwidth = kIOReturnNoBandwidth,
-    kIOReturnNotResponding = kIOReturnNotResponding,
-    kIOReturnIsoTooOld = kIOReturnIsoTooOld,
-    kIOReturnIsoTooNew = kIOReturnIsoTooNew,
-    kIOReturnNotFound = kIOReturnNotFound,
-    kIOReturnInvalid = kIOReturnInvalid,
+  kIOReturnSuccess = kIOReturnSuccess,
+  kIOReturnError = kIOReturnError,
+  kIOReturnNoMemory = kIOReturnNoMemory,
+  kIOReturnNoResources = kIOReturnNoResources,
+  kIOReturnIPCError = kIOReturnIPCError,
+  kIOReturnNoDevice = kIOReturnNoDevice,
+  kIOReturnNotPrivileged = kIOReturnNotPrivileged,
+  kIOReturnBadArgument = kIOReturnBadArgument,
+  kIOReturnLockedRead = kIOReturnLockedRead,
+  kIOReturnLockedWrite = kIOReturnLockedWrite,
+  kIOReturnExclusiveAccess = kIOReturnExclusiveAccess,
+  kIOReturnBadMessageID = kIOReturnBadMessageID,
+  kIOReturnUnsupported = kIOReturnUnsupported,
+  kIOReturnVMError = kIOReturnVMError,
+  kIOReturnInternalError = kIOReturnInternalError,
+  kIOReturnIOError = kIOReturnIOError,
+  kIOReturnCannotLock = kIOReturnCannotLock,
+  kIOReturnNotOpen = kIOReturnNotOpen,
+  kIOReturnNotReadable = kIOReturnNotReadable,
+  kIOReturnNotWritable = kIOReturnNotWritable,
+  kIOReturnNotAligned = kIOReturnNotAligned,
+  kIOReturnBadMedia = kIOReturnBadMedia,
+  kIOReturnStillOpen = kIOReturnStillOpen,
+  kIOReturnRLDError = kIOReturnRLDError,
+  kIOReturnDMAError = kIOReturnDMAError,
+  kIOReturnBusy = kIOReturnBusy,
+  kIOReturnTimeout = kIOReturnTimeout,
+  kIOReturnOffline = kIOReturnOffline,
+  kIOReturnNotReady = kIOReturnNotReady,
+  kIOReturnNotAttached = kIOReturnNotAttached,
+  kIOReturnNoChannels = kIOReturnNoChannels,
+  kIOReturnNoSpace = kIOReturnNoSpace,
+  kIOReturnPortExists = kIOReturnPortExists,
+  kIOReturnCannotWire = kIOReturnCannotWire,
+  kIOReturnNoInterrupt = kIOReturnNoInterrupt,
+  kIOReturnNoFrames = kIOReturnNoFrames,
+  kIOReturnMessageTooLarge = kIOReturnMessageTooLarge,
+  kIOReturnNotPermitted = kIOReturnNotPermitted,
+  kIOReturnNoPower = kIOReturnNoPower,
+  kIOReturnNoMedia = kIOReturnNoMedia,
+  kIOReturnUnformattedMedia = kIOReturnUnformattedMedia,
+  kIOReturnUnsupportedMode = kIOReturnUnsupportedMode,
+  kIOReturnUnderrun = kIOReturnUnderrun,
+  kIOReturnOverrun = kIOReturnOverrun,
+  kIOReturnDeviceError = kIOReturnDeviceError,
+  kIOReturnNoCompletion = kIOReturnNoCompletion,
+  kIOReturnAborted = kIOReturnAborted,
+  kIOReturnNoBandwidth = kIOReturnNoBandwidth,
+  kIOReturnNotResponding = kIOReturnNotResponding,
+  kIOReturnIsoTooOld = kIOReturnIsoTooOld,
+  kIOReturnIsoTooNew = kIOReturnIsoTooNew,
+  kIOReturnNotFound = kIOReturnNotFound,
+  kIOReturnInvalid = kIOReturnInvalid,
 }
 
 #[derive(Debug, FromPrimitive)]
@@ -209,38 +208,38 @@ pub enum AppleIoReturn {
 // but the error still isn't helpful.
 #[repr(u32)]
 pub enum AppleIoMessage {
-    kIOMessageServiceIsTerminated = kIOMessageServiceIsTerminated,
-    kIOMessageServiceIsSuspended = kIOMessageServiceIsSuspended,
-    kIOMessageServiceIsResumed = kIOMessageServiceIsResumed,
-    kIOMessageServiceIsRequestingClose = kIOMessageServiceIsRequestingClose,
-    kIOMessageServiceIsAttemptingOpen = kIOMessageServiceIsAttemptingOpen,
-    kIOMessageServiceWasClosed = kIOMessageServiceWasClosed,
-    kIOMessageServiceBusyStateChange = kIOMessageServiceBusyStateChange,
-    kIOMessageCanDevicePowerOff = kIOMessageCanDevicePowerOff,
-    kIOMessageDeviceWillPowerOff = kIOMessageDeviceWillPowerOff,
-    kIOMessageDeviceWillNotPowerOff = kIOMessageDeviceWillNotPowerOff,
-    kIOMessageDeviceHasPoweredOn = kIOMessageDeviceHasPoweredOn,
-    kIOMessageCanSystemPowerOff = kIOMessageCanSystemPowerOff,
-    kIOMessageSystemWillPowerOff = kIOMessageSystemWillPowerOff,
-    kIOMessageSystemWillNotPowerOff = kIOMessageSystemWillNotPowerOff,
-    kIOMessageCanSystemSleep = kIOMessageCanSystemSleep,
-    kIOMessageSystemWillSleep = kIOMessageSystemWillSleep,
-    kIOMessageSystemWillNotSleep = kIOMessageSystemWillNotSleep,
-    kIOMessageSystemHasPoweredOn = kIOMessageSystemHasPoweredOn,
-    kIOMessageSystemWillRestart = kIOMessageSystemWillRestart,
-    kIOMessageSystemWillPowerOn = kIOMessageSystemWillPowerOn,
+  kIOMessageServiceIsTerminated = kIOMessageServiceIsTerminated,
+  kIOMessageServiceIsSuspended = kIOMessageServiceIsSuspended,
+  kIOMessageServiceIsResumed = kIOMessageServiceIsResumed,
+  kIOMessageServiceIsRequestingClose = kIOMessageServiceIsRequestingClose,
+  kIOMessageServiceIsAttemptingOpen = kIOMessageServiceIsAttemptingOpen,
+  kIOMessageServiceWasClosed = kIOMessageServiceWasClosed,
+  kIOMessageServiceBusyStateChange = kIOMessageServiceBusyStateChange,
+  kIOMessageCanDevicePowerOff = kIOMessageCanDevicePowerOff,
+  kIOMessageDeviceWillPowerOff = kIOMessageDeviceWillPowerOff,
+  kIOMessageDeviceWillNotPowerOff = kIOMessageDeviceWillNotPowerOff,
+  kIOMessageDeviceHasPoweredOn = kIOMessageDeviceHasPoweredOn,
+  kIOMessageCanSystemPowerOff = kIOMessageCanSystemPowerOff,
+  kIOMessageSystemWillPowerOff = kIOMessageSystemWillPowerOff,
+  kIOMessageSystemWillNotPowerOff = kIOMessageSystemWillNotPowerOff,
+  kIOMessageCanSystemSleep = kIOMessageCanSystemSleep,
+  kIOMessageSystemWillSleep = kIOMessageSystemWillSleep,
+  kIOMessageSystemWillNotSleep = kIOMessageSystemWillNotSleep,
+  kIOMessageSystemHasPoweredOn = kIOMessageSystemHasPoweredOn,
+  kIOMessageSystemWillRestart = kIOMessageSystemWillRestart,
+  kIOMessageSystemWillPowerOn = kIOMessageSystemWillPowerOn,
 }
 
 extern "C" {
-    // We need this function but Rust won't let us do a raw cast to accept a
-    // *c_void, which the function actually expects.  Without this we run into
-    // problems where Rust is using some kind of wrapped value.  We can't pass
-    // the original value to the function and so we never actually do the allow.
-    // See build.rs for the exclude from the bindgen generation.
-    pub fn IOAllowPowerChange(
-        kernelPort: io_connect_t,
-        notificationID: *mut ::std::os::raw::c_void,
-    ) -> IOReturn;
+  // We need this function but Rust won't let us do a raw cast to accept a
+  // *c_void, which the function actually expects.  Without this we run into
+  // problems where Rust is using some kind of wrapped value.  We can't pass
+  // the original value to the function and so we never actually do the allow.
+  // See build.rs for the exclude from the bindgen generation.
+  pub fn IOAllowPowerChange(
+    kernelPort: io_connect_t,
+    notificationID: *mut ::std::os::raw::c_void,
+  ) -> IOReturn;
 }
 
 // Unsure why this isn't getting picked up anymore.  I bumped the bindgen
@@ -253,6 +252,12 @@ extern "C" {
     theType: CFNumberType,
     valuePtr: *const ::std::os::raw::c_void,
   ) -> CFNumberRef;
+
+  pub fn CFNumberGetValue(
+    number: CFNumberRef,
+    theType: CFNumberType,
+    valuePtr: *mut ::std::os::raw::c_void,
+  ) -> Boolean;
 }
 
 pub type CFNumberType = CFIndex;

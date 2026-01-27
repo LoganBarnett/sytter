@@ -1,0 +1,39 @@
+name = "test_device_properties"
+description = "Integration test for device property extraction - plug in a USB device to trigger"
+
+[[trigger]]
+kind = "device-connection"
+events = ["Add"]
+device_types = ["usb"]
+macos_notification_type = "FirstPublish"
+
+[[condition]]
+kind = "shell"
+script = "true"
+
+[[execute]]
+kind = "shell"
+script = '''
+set -euo pipefail
+
+# Load device properties from state
+sytter-vars
+
+echo "=== Device Connection Detected ==="
+echo "Name: ${sytter_device_name:-<not available>}"
+echo "Vendor ID: ${sytter_device_vendor_id:-<not available>}"
+echo "Product ID: ${sytter_device_product_id:-<not available>}"
+echo "Serial Number: ${sytter_device_serial_number:-<not available>}"
+echo "Location ID: ${sytter_device_location_id:-<not available>}"
+echo "BSD Name: ${sytter_device_bsd_name:-<not available>}"
+echo "===================================="
+
+# Write to test output file
+echo "$(date +%s)" >> "$SYTTER_TEST_OUTPUT"
+'''
+
+[[failure]]
+kind = "shell"
+script = '''
+echo "FAILED to process device connection" >> "$SYTTER_TEST_OUTPUT"
+'''
