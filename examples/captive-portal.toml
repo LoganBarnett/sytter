@@ -9,26 +9,26 @@ description = "Periodically authenticate via Captive Portal when on the VPN."
 #
 # The example is for serialization but it could be adapted to deserialization
 # probably.
-[[trigger]]
+[[triggers]]
 kind = "cron"
 # 1/minute is a more practical schedule, but impractical for testing.
 # cron = "0 1 * * * * *"
 # Every 4 seconds.
 cron = "1/4 * * * * *"
 
-[[condition]]
+[[conditions]]
 kind = "shell"
 # This is a boolean expression in Bash that will only run if we're on the VPN.
 # Not working for you? You can try some of the suggestions here:
 # https://community.jamf.com/t5/jamf-pro/how-to-check-if-the-mac-is-connected-to-vpn/m-p/291122
 script = "[[ $( /usr/sbin/scutil --nwi ) == *\"utun\"* ]]"
 
-[[execute]]
+[[executors]]
 kind = "shell"
 # When the trigger is triggered, and the condition is true, we run this script.
 script = "~/bin/captivate.sh"
 
-[[failure]]
+[[failures]]
 kind = "shell"
 # Send a local email (with `sendmail`) to tell us about it.
 script = """\

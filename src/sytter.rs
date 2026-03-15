@@ -43,13 +43,9 @@ pub struct Sytter {
 pub struct SytterDeserializedRaw {
   pub name: String,
   pub description: String,
-  #[serde(rename = "trigger")]
   pub triggers: Vec<Table>,
-  #[serde(rename = "condition")]
   pub conditions: Vec<Table>,
-  #[serde(rename = "execute")]
   pub executors: Vec<Table>,
-  #[serde(rename = "failure")]
   pub failures: Vec<Table>,
 }
 

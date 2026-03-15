@@ -1,18 +1,18 @@
 name = "Hello World"
 description = "A very basic example"
 
-[[trigger]]
+[[triggers]]
 kind = "cron"
 cron = "1/4 * * * * *"
 
-[[condition]]
+[[conditions]]
 kind = "shell"
 script = "true"
 
-[[execute]]
+[[executors]]
 kind = "shell"
 script = "ls -al"
 
-[[failure]]
+[[failures]]
 kind = "shell"
 script = "echo 'There was an error!'"

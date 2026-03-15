@@ -4,15 +4,15 @@ Disable bluetooth on sleep, and enable it again when waking up. \
 Helpful for macOS, which is notorious for draining battery from chatty \
 Bluetooth devices."""
 
-[[trigger]]
+[[triggers]]
 kind = "power"
 events = ["Sleep", "Wake"]
 
-[[condition]]
+[[conditions]]
 kind = "shell"
 script = "true"
 
-[[execute]]
+[[executors]]
 kind = "shell"
 script = """\
 set -euo pipefail
@@ -39,7 +39,7 @@ else
 fi
 """
 
-[[failure]]
+[[failures]]
 kind = "shell"
 # Send a local email (with `sendmail`) to tell us about it.
 script = """\

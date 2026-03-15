@@ -1,17 +1,17 @@
 name = "test_device_properties"
 description = "Integration test for device property extraction - plug in a USB device to trigger"
 
-[[trigger]]
+[[triggers]]
 kind = "device-connection"
 events = ["Add"]
 device_types = ["usb"]
 macos_notification_type = "FirstPublish"
 
-[[condition]]
+[[conditions]]
 kind = "shell"
 script = "true"
 
-[[execute]]
+[[executors]]
 kind = "shell"
 script = '''
 set -euo pipefail
@@ -32,7 +32,7 @@ echo "===================================="
 echo "$(date +%s)" >> "$SYTTER_TEST_OUTPUT"
 '''
 
-[[failure]]
+[[failures]]
 kind = "shell"
 script = '''
 echo "FAILED to process device connection" >> "$SYTTER_TEST_OUTPUT"

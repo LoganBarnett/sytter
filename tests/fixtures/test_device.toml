@@ -1,24 +1,24 @@
 name = "test_device_connection_trigger"
 description = "Integration test for device connection trigger - monitors USB devices"
 
-[[trigger]]
+[[triggers]]
 kind = "device-connection"
 events = ["Add"]
 device_types = ["usb"]
 # Optional: Override with macOS-specific settings.
 macos_notification_type = "FirstPublish"
 
-[[condition]]
+[[conditions]]
 kind = "shell"
 script = "true"
 
-[[execute]]
+[[executors]]
 kind = "shell"
 script = """
 echo "$(date +%s)" >> "$SYTTER_TEST_OUTPUT"
 """
 
-[[failure]]
+[[failures]]
 kind = "shell"
 script = """
 echo "FAILED" >> "$SYTTER_TEST_OUTPUT"

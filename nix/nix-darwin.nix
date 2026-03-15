@@ -18,20 +18,20 @@
         default = "";
         description = "Human-readable description of what this sytter does.";
       };
-      trigger = lib.mkOption {
+      triggers = lib.mkOption {
         type = lib.types.listOf lib.types.attrs;
         description = "One or more triggers that fire this sytter.";
       };
-      condition = lib.mkOption {
+      conditions = lib.mkOption {
         type = lib.types.listOf lib.types.attrs;
         default = [ ];
         description = "Conditions that gate execution when a trigger fires.";
       };
-      execute = lib.mkOption {
+      executors = lib.mkOption {
         type = lib.types.listOf lib.types.attrs;
         description = "Actions to perform when triggered and conditions pass.";
       };
-      failure = lib.mkOption {
+      failures = lib.mkOption {
         type = lib.types.listOf lib.types.attrs;
         default = [ ];
         description = "Handlers to invoke when an executor fails.";
@@ -105,13 +105,13 @@ in {
           bluetooth-on-sleep = {
             name = "Bluetooth disabled on sleep";
             description = "Disable Bluetooth on sleep, enable it again on wake.";
-            trigger = [
+            triggers = [
               { kind = "power"; events = [ "Sleep" "Wake" ]; }
             ];
-            condition = [
+            conditions = [
               { kind = "shell"; script = "true"; }
             ];
-            execute = [
+            executors = [
               {
                 kind = "shell";
                 script = '''

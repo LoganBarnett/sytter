@@ -130,15 +130,15 @@ Disable bluetooth on sleep, and enable it again when waking up. \
 Helpful for macOS, which is notorious for draining battery from chatty \
 Bluetooth devices."""
 
-[[trigger]]
+[[triggers]]
 kind = "power"
 events = ["Sleep", "Wake"]
 
-[[condition]]
+[[conditions]]
 kind = "shell"
 script = "true"
 
-[[execute]]
+[[executors]]
 kind = "shell"
 script = """\
 set -euo pipefail
@@ -163,7 +163,7 @@ else
 fi
 """
 
-[[failure]]
+[[failures]]
 kind = "shell"
 # Send a local email (with `sendmail`) to tell us about it.
 script = """\
@@ -204,7 +204,7 @@ Only ~macOS~ works with ~device-connection~ currently.
 Example:
 
 #+begin_src toml
-[[trigger]]
+[[triggers]]
 kind = "device-connection"
 events = ["Add"]
 device_types = ["usb"]
@@ -215,7 +215,7 @@ This listens to USB device connection events.
 To monitor multiple device types:
 
 #+begin_src toml
-[[trigger]]
+[[triggers]]
 kind = "device-connection"
 events = ["Add"]
 device_types = ["usb", "storage"]
@@ -224,7 +224,7 @@ device_types = ["usb", "storage"]
 Or to monitor all device types:
 
 #+begin_src toml
-[[trigger]]
+[[triggers]]
 kind = "device-connection"
 events = ["Add"]
 device_types = ["any"]
@@ -248,7 +248,7 @@ these variables as environment variables.
 Example using device properties in a condition:
 
 #+begin_src toml
-[[condition]]
+[[conditions]]
 kind = "shell"
 script = '''
 sytter-vars
@@ -260,7 +260,7 @@ test "$sytter_device_vendor_id" = "0x05ac"
 Example showing all device info:
 
 #+begin_src toml
-[[execute]]
+[[executors]]
 kind = "shell"
 script = '''
 set -euo pipefail
@@ -301,7 +301,7 @@ If you need fine-grained control over the macOS implementation, you can use the
 Example with overrides:
 
 #+begin_src toml
-[[trigger]]
+[[triggers]]
 kind = "device-connection"
 events = ["Add"]
 device_types = ["usb"]
@@ -311,7 +311,7 @@ macos_notification_type = "FirstPublish"
 Or bypass the mapping entirely:
 
 #+begin_src toml
-[[trigger]]
+[[triggers]]
 kind = "device-connection"
 events = ["Add"]
 macos_device_class = "IOBluetoothDevice"
@@ -335,7 +335,7 @@ Only ~macOS~ works with ~power~ currently.
 Example:
 
 #+begin_src toml
-[[trigger]]
+[[triggers]]
 kind = "power"
 events = ["Sleep", "Wake"]
 #+end_src
