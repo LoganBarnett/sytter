@@ -180,6 +180,143 @@ the above should just be a copy.
 * Configuration
 ** Contrib
 
+*** Device Connection
+
+This provides a trigger when devices are connected or disconnected from the system.
+
+The ~kind~ is ~device-connection~, and you can listen to various ~events~:
+
++ ~Add~ - Device was connected
++ ~Remove~ - Device was disconnected (not yet fully supported)
+
+You specify the ~device_types~ using platform-agnostic identifiers:
+
++ ~usb~ - USB devices
++ ~storage~ - Storage devices (hard drives, USB drives, etc.)
++ ~network~ - Network interfaces
++ ~any~ - All device types (expands to usb, storage, and network)
+
+You can specify multiple device types to monitor. For each type, a separate listener
+will be registered.
+
+Only ~macOS~ works with ~device-connection~ currently.
+
+Example:
+
+#+begin_src toml
+[[trigger]]
+kind = "device-connection"
+events = ["Add"]
+device_types = ["usb"]
+#+end_src
+
+This listens to USB device connection events.
+
+To monitor multiple device types:
+
+#+begin_src toml
+[[trigger]]
+kind = "device-connection"
+events = ["Add"]
+device_types = ["usb", "storage"]
+#+end_src
+
+Or to monitor all device types:
+
+#+begin_src toml
+[[trigger]]
+kind = "device-connection"
+events = ["Add"]
+device_types = ["any"]
+#+end_src
+
+**** Device Properties
+
+When a device connection event occurs, the following state variables are available
+for use in conditions and executors (after calling ~sytter-vars~):
+
++ ~sytter_device_name~ - Human-readable device name (e.g., "Apple Magic Keyboard")
++ ~sytter_device_vendor_id~ - Vendor ID in hex format (e.g., "0x05ac" for Apple)
++ ~sytter_device_product_id~ - Product ID in hex format
++ ~sytter_device_serial_number~ - Serial number (uniquely identifies THIS specific device, not just the model)
++ ~sytter_device_location_id~ - USB location ID (identifies which port the device is plugged into)
++ ~sytter_device_bsd_name~ - BSD device name for storage devices (e.g., "/dev/disk2")
+
+**Important**: You must call ~sytter-vars~ at the start of your shell script to load
+these variables as environment variables.
+
+Example using device properties in a condition:
+
+#+begin_src toml
+[[condition]]
+kind = "shell"
+script = '''
+sytter-vars
+# Only trigger for Apple devices (vendor ID 0x05ac)
+test "$sytter_device_vendor_id" = "0x05ac"
+'''
+#+end_src
+
+Example showing all device info:
+
+#+begin_src toml
+[[execute]]
+kind = "shell"
+script = '''
+set -euo pipefail
+sytter-vars
+
+echo "Device: $sytter_device_name"
+echo "Vendor ID: $sytter_device_vendor_id"
+echo "Product ID: $sytter_device_product_id"
+echo "Serial: $sytter_device_serial_number"
+'''
+#+end_src
+
+**Discovering device properties**: You can use ~ioreg~ on macOS to discover what properties
+are available for your devices:
+
+#+begin_src sh
+# List all USB devices with their properties
+ioreg -r -c IOUSBHostDevice
+
+# Find a specific device by name
+ioreg -r -c IOUSBHostDevice -n "YourDeviceName"
+
+# Storage devices
+ioreg -r -c IOMedia
+#+end_src
+
+**** macOS-specific overrides
+
+If you need fine-grained control over the macOS implementation, you can use the
+~macos_~ prefixed fields:
+
++ ~macos_device_class~ - Override the IOKit device class (e.g. ~IOUSBHostDevice~,
+  ~IOMedia~, ~IONetworkInterface~)
++ ~macos_notification_type~ - Override notification timing: ~FirstMatch~ (fires
+  when drivers start, default) or ~FirstPublish~ (fires when device registers,
+  earlier)
+
+Example with overrides:
+
+#+begin_src toml
+[[trigger]]
+kind = "device-connection"
+events = ["Add"]
+device_types = ["usb"]
+macos_notification_type = "FirstPublish"
+#+end_src
+
+Or bypass the mapping entirely:
+
+#+begin_src toml
+[[trigger]]
+kind = "device-connection"
+events = ["Add"]
+macos_device_class = "IOBluetoothDevice"
+#+end_src
+
 *** Power
 
 This provides a trigger when power changes.

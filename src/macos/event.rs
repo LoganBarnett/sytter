@@ -80,6 +80,8 @@ pub fn listen_start<A: CallbackData + 'static>(
   mut callback: impl FnMut(A) -> () + Send + Sync + 'static,
 ) -> Result<Box<dyn FnOnce() -> (io_object_t, IONotificationPortRef)>, AppError>
 {
+  debug!("listen_start: Starting event listener registration");
+
   // This value is required later to be used _by_ the callback, for example
   // IOAllowPowerChange - a function that must be invoked to acknowledge
   // work is done with our service before sleep can properly begin.  It
@@ -87,17 +89,22 @@ pub fn listen_start<A: CallbackData + 'static>(
   // event must be acknowledged regardless.
   let mut kernel_port: io_connect_t = io_connect_t(io_object_t(MACH_PORT_NULL));
   trace!("kernel_port: {:?}", kernel_port);
-  let mut port_ref = port_ref_create()?;
+
+  let mut port_ref = port_ref_create()
+    .inspect_err(|e| error!("Failed to create notification port: {:?}", e))?;
+  debug!("Created notification port: {:x?}", port_ref);
+
   let mut notifier: io_object_t = io_object_t(0u32);
   // port_ref gets mutated here, so copy it so we can use it for our
   // callback identification.
   trace!("port_ref before clone: {:x?}", port_ref);
   // let port_ref_to_refcon: usize = port_ref.deref();
   let mut port_ref_to_refcon: usize = rand::random();
-  trace!("port_ref after clone:  {:x?}", port_ref_to_refcon);
+  debug!("Generated refcon value: {:x}", port_ref_to_refcon);
+
   let listen_result =
     listen_fn(&mut notifier, &mut port_ref, &mut port_ref_to_refcon);
-  trace!("kernel_port mutated to: {:?}", listen_result);
+  debug!("listen_fn returned: {:?}", listen_result);
   match listen_result {
     ListenResult::io_connect_t(kr) => kernel_port = kr,
     _ => (),
@@ -113,82 +120,117 @@ pub fn listen_start<A: CallbackData + 'static>(
       callback(*event);
       kernel_port
     });
-  trace!("Storing {:x?} in callbacks container.", port_ref_to_refcon);
+  debug!(
+    "Registering callback with refcon {:x} in callbacks container.",
+    port_ref_to_refcon
+  );
   {
     let mut callbacks = CALLBACKS
       .lock()
       .inspect(|_| {
-        trace!("Got lock for CALLBACKs.");
+        debug!("Acquired lock for CALLBACKS.");
       })
       .map_err(|_e| {
+        error!("Could not lock CALLBACKS mutex!");
         AppError::EventMutexLockError("Could not lock CALLBACKS.".into())
       })?;
     callbacks.insert(port_ref_to_refcon, stoppable_callback);
+    debug!("Callback registered. Total callbacks: {}", callbacks.len());
   }
+
   let loop_source = unsafe {
     IONotificationPortGetRunLoopSource(port_ref)
   }
   // usize the pointer so we can toss it over the thread "safely".
   as usize;
-  trace!("loop_source {:x?}", loop_source);
-  if false && !listen_result.success() {
-    Err(AppError::ListenerRegistrationFailed)
-  } else {
-    unsafe {
-      let _scheduler = thread::spawn(move || {
-        trace!(
-          "In thread for CFRunLoop with loop_source {:x?}.",
-          loop_source
-        );
-        CFRunLoopAddSource(
-          CFRunLoopGetCurrent(),
-          loop_source as CFRunLoopSourceRef,
-          kCFRunLoopCommonModes,
-        );
-        trace!("CFRunLoop registered.  Waiting for callbacks.");
-        // This blocks, and is necessary for callbacks to be invoked.
-        // Without this, there will be no warning and log _anywhere_ that
-        // the message was not posted or that there is otherwise a problem.
-        // This includes both on this app's side as well as the system logs
-        // (seen via Console.app).
-        CFRunLoopRun();
-        trace!("Unreachable? Done with loop run.");
-      });
-    }
-    Ok(Box::new(move || (notifier, port_ref)))
+
+  if loop_source == 0 {
+    error!("IONotificationPortGetRunLoopSource returned NULL!");
+    return Err(AppError::ListenerRegistrationFailed);
   }
+
+  debug!("Got run loop source: {:x?}", loop_source);
+
+  if !listen_result.success() {
+    error!("Listener registration failed: {:?}", listen_result);
+    return Err(AppError::ListenerRegistrationFailed);
+  }
+
+  unsafe {
+    let _scheduler = thread::spawn(move || {
+      debug!(
+        "CFRunLoop thread started with loop_source {:x?}.",
+        loop_source
+      );
+      let current_run_loop = CFRunLoopGetCurrent();
+      if current_run_loop.is_null() {
+        error!("CFRunLoopGetCurrent returned NULL!");
+        return;
+      }
+      debug!("Current run loop: {:?}", current_run_loop);
+
+      CFRunLoopAddSource(
+        current_run_loop,
+        loop_source as CFRunLoopSourceRef,
+        kCFRunLoopCommonModes,
+      );
+      info!("CFRunLoop source added. Waiting for callbacks...");
+      // This blocks, and is necessary for callbacks to be invoked.
+      // Without this, there will be no warning and log _anywhere_ that
+      // the message was not posted or that there is otherwise a problem.
+      // This includes both on this app's side as well as the system logs
+      // (seen via Console.app).
+      CFRunLoopRun();
+      warn!("CFRunLoop exited (this should not normally happen).");
+    });
+  }
+  debug!("listen_start: Registration complete");
+  Ok(Box::new(move || (notifier, port_ref)))
 }
 
 pub fn refcon_callback(
   refcon: usize,
   data: Box<dyn Any>,
 ) -> Result<io_connect_t, AppError> {
-  trace!("refcon: {:x?}", refcon);
-  trace!("Getting {:x?} from callback container.", refcon);
+  debug!("refcon_callback called with refcon: {:x}", refcon);
+
+  if refcon == 0 {
+    error!("refcon_callback called with NULL refcon!");
+    return Err(AppError::KernelPortCallbackNotFoundError(refcon));
+  }
+
   let mut callbacks = CALLBACKS
     .lock()
     .inspect(|_| {
-      trace!("Got lock for CALLBACKs.");
+      debug!("Acquired lock for CALLBACKS in refcon_callback.");
     })
     .map_err(|_e| {
+      error!("Could not lock CALLBACKS mutex in refcon_callback!");
       AppError::EventMutexLockError("Could not lock CALLBACKS.".into())
     })?;
+
   // Ugh.  Why, Rust?
   // Even though we might not even use it due to the code path and the trace!
   // macro, we still have to compute a value here or Rust throws a fit over
   // borrows.  A more knowledgeable person could figure this out possibly, but
   // I've had no lock trying to get it working directly in the inspect_err.
-  let keys = format!("{:x?}", callbacks.keys().clone());
+  let keys = format!("{:x?}", callbacks.keys().collect::<Vec<_>>());
+  debug!("Available callback refcons: {}", keys);
+
   let closure: &mut Box<KernelPortCallback> = callbacks
     .get_mut(&refcon)
     .ok_or(AppError::KernelPortCallbackNotFoundError(refcon))
     .inspect_err(|e| {
-      info!("CALLBACKS has available: {}\nWe want: {:x?}", keys, e,);
+      error!("Callback not found! Available refcons: {}\nLooking for: {:x?}\nError: {:?}", keys, refcon, e);
     })
     .inspect(|_| {
-      trace!("Found callback for refcon `{:x?}'.", refcon);
+      debug!("Found callback for refcon {:x}.", refcon);
     })?;
-  Ok(closure(data))
+
+  debug!("Invoking callback for refcon {:x}", refcon);
+  let result = closure(data);
+  debug!("Callback invocation complete for refcon {:x}", refcon);
+  Ok(result)
 }
 
 // This is unrolled in listen_start.  I couldn't satisfy the type signature.
