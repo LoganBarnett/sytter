@@ -7,7 +7,7 @@
 
   outputs = { self, nixpkgs, rust-overlay }@inputs: let
     lib = nixpkgs.lib;
-    systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+    systems = lib.systems.flakeExposed;
     forEachSystem = lib.genAttrs systems;
     pkgsFor = system: import nixpkgs { inherit system; };
     packages = (pkgs: let
