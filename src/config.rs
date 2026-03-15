@@ -23,6 +23,7 @@ pub struct Config {
 pub struct EnvConfig {
   pub sytters_path: Option<String>,
   pub log_level: Option<String>,
+  pub http_port: Option<usize>,
 }
 
 // TODO: Remove this, since clap handles this now.
@@ -34,6 +35,7 @@ pub fn env_config_load() -> Result<EnvConfig, AppError> {
     log_level: var("sytter_log_level")
       .map_err(AppError::ConfigEnvVarError)
       .ok(),
+    http_port: var("sytter_http_port").ok().and_then(|s| s.parse().ok()),
   };
   Ok(config)
 }
@@ -59,8 +61,7 @@ pub fn config_cli_merge(
     .unwrap_or("info".to_string());
 
   Ok(Config {
-    // TODO: feed this to the HTTP server.
-    http_port: 8080,
+    http_port: env_config.http_port.unwrap_or(8080),
     sytters_path: cli_config
       .sytters_path
       .or(env_config.sytters_path)
