@@ -42,7 +42,7 @@ use sytter_macos_bindings::{
 // io_connect_t IORegisterForSystemPower(void *refcon, IONotificationPortRef *thePortRef, IOServiceInterestCallback callback, io_object_t *notifier);
 use std::ffi::c_void;
 // Gives us macros such as debug! and error! See logging.rs for setup.
-use log::*;
+use tracing::*;
 
 impl CallbackData for PowerEvent {
   // fn as_any(&self) -> &dyn Any {

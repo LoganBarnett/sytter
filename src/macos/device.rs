@@ -34,7 +34,7 @@ use sytter_macos_bindings::{
   // kern_return_t,
   // NSDictionary,
 };
-use log::*;
+use tracing::*;
 use std::{
   // any::Any,
   ffi::c_void,

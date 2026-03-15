@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use log::*;
+use tracing::*;
 use std::process::Command;
 
 // We could lazy_static this but eventually it'll become configurable.

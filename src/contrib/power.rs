@@ -4,7 +4,7 @@ use crate::{
     trigger::Trigger,
     macos::power::sleep_listen_start,
 };
-use log::*;
+use tracing::*;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, SyncSender};

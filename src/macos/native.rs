@@ -24,7 +24,7 @@ use sytter_macos_bindings::{
   IONotificationPortRef,
   MACH_PORT_NULL,
 };
-use log::*;
+use tracing::*;
 use std::ffi::{
   c_void,
   // CString,
