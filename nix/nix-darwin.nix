@@ -6,6 +6,38 @@
   default-user = "sytter";
   default-group = "sytter";
   service-name = "sytter";
+  toml = pkgs.formats.toml { };
+  sytter-type = lib.types.submodule {
+    options = {
+      name = lib.mkOption {
+        type = lib.types.str;
+        description = "Human-readable name for this sytter.";
+      };
+      description = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "Human-readable description of what this sytter does.";
+      };
+      trigger = lib.mkOption {
+        type = lib.types.listOf lib.types.attrs;
+        description = "One or more triggers that fire this sytter.";
+      };
+      condition = lib.mkOption {
+        type = lib.types.listOf lib.types.attrs;
+        default = [ ];
+        description = "Conditions that gate execution when a trigger fires.";
+      };
+      execute = lib.mkOption {
+        type = lib.types.listOf lib.types.attrs;
+        description = "Actions to perform when triggered and conditions pass.";
+      };
+      failure = lib.mkOption {
+        type = lib.types.listOf lib.types.attrs;
+        default = [ ];
+        description = "Handlers to invoke when an executor fails.";
+      };
+    };
+  };
 in {
   options.services.sytter = {
 
@@ -35,7 +67,7 @@ in {
       type = lib.types.str;
       default = "/var/lib/${service-name}";
       description = ''
-        Location where Sytters are stored.
+        Location where Sytter runtime data (logs, state) is stored.
       '';
     };
 
@@ -62,46 +94,53 @@ in {
     };
 
     sytters = lib.mkOption {
-      default = {};
+      default = { };
       description = ''
-        Sytters to ensure for the Sytter service to use.
+        Sytters to manage for the Sytter service.  Each attribute name is used
+        as the TOML filename stem.  The sytter binary is pointed directly at
+        the resulting Nix store path, so no activation script is needed.
       '';
-      defaultText = lib.literalExpression ''
+      example = lib.literalExpression ''
         {
-          name: "Bluetooth disabled on Sleep";
-          description: ''$
-            Disable Bluetooth on sleep, and enable it again when waking up \
-            Helpful for macOS, which is notorious for draining battery from
-            chatty Bluetooth devices.
-          ''$;
-          triggers = [
-            { kind = "power"; events = ["Sleep", "Wake"]; }
-          ];
-          conditions = [
-            { kind = "shell"; script = "true"; }
-          ];
-          executors = [
-            {
-              kind = "shell";
-              script = ''$
-                if [[ "$sytter_power_event" == \"Sleep\" ]]; then
-                  sytter_bluetooth_enabled_at_sleep=$(blueutil --power)
-                  sytter-var-write sytter_bluetooth_enabled_at_sleep
-                  blueutil --power 0
-                else
-                  sytter-vars sytter_bluetooth_enabled_at_sleep
-                  blueutil --power $sytter_bluetooth_enabled_at_sleep
-                fi
-              ''$;
-            }
-          ];
+          bluetooth-on-sleep = {
+            name = "Bluetooth disabled on sleep";
+            description = "Disable Bluetooth on sleep, enable it again on wake.";
+            trigger = [
+              { kind = "power"; events = [ "Sleep" "Wake" ]; }
+            ];
+            condition = [
+              { kind = "shell"; script = "true"; }
+            ];
+            execute = [
+              {
+                kind = "shell";
+                script = '''
+                  if [[ "$sytter_power_event" == "Sleep" ]]; then
+                    sytter_bluetooth_enabled_at_sleep=$(blueutil --power)
+                    sytter-var-write sytter_bluetooth_enabled_at_sleep
+                    blueutil --power 0
+                  else
+                    sytter-vars sytter_bluetooth_enabled_at_sleep
+                    blueutil --power "$sytter_bluetooth_enabled_at_sleep"
+                  fi
+                ''';
+              }
+            ];
+          };
         }
       '';
-      type = lib.types.attrs;
+      type = lib.types.attrsOf sytter-type;
     };
   };
   config = lib.mkIf cfg.enable {
-    launchd.user.agents.sytter = {
+    launchd.user.agents.sytter = let
+      sytters-pkg = pkgs.linkFarm "sytter-configs" (
+        lib.mapAttrsToList (name: sytter: {
+          name = "${name}.toml";
+          path = toml.generate "${name}.toml" sytter;
+        }) cfg.sytters
+      );
+    in {
       command = "${pkgs.sytter}/bin/sytter";
       serviceConfig = {
         KeepAlive = true;
@@ -110,7 +149,7 @@ in {
         StandardOutPath = cfg.log-file;
         StandardErrorPath = cfg.log-file;
         EnvironmentVariables = {
-          SYTTERS_PATH = "${cfg.data-path}/sytters";
+          SYTTERS_PATH = "${sytters-pkg}";
           SYTTER_VERBOSITY = cfg.log-level;
         };
       };
