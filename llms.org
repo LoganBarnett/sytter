@@ -1,0 +1,106 @@
+#+title:     LLMs
+#+language:  en
+
+* General code guidelines
+
+These are instructions for LLMs to write code more to my liking.
+
+** Documents
+
+When authoring new content, make them ~org-mode~ files.
+
+Use ~:exports code~ if you just want to show off the code, and don't want it to
+actually run anything.
+
+No file lists in documentation.
+
+** Comments
+
+*** Formatting and punctuation
+
+Comments must be complete sentences, wrapped at ~80 columns, with standard
+punctuation.
+
+*** Content
+
+Only comment non-obvious intent, invariants, tradeoffs, or historical
+constraints; no restating of control flow.
+
+** Code
+
+*** initialisms
+
+Use Pascal Initialisms (~Url~) instead of Preserved Initialisms (~URL~) when
+_authoring_ new identifiers in camel case.
+
+** Rust
+
+*** Error Handling
+
+Prefer semantic errors.  In other words, do not just wrap or propagate a
+~FileMissingError~ or ~FileWriteError~.  This information _might_ include what
+file was involved but it doesn't say what was happening.  So instead you need to
+include something either about the error itself (like ~ConfigFileMissingError~)
+or something about the process in which the error occurred
+(~ReportFileWriteError~).
+
+In cases where you can be semantic with your approach to APIs, use ~thiserror~
+to automatically map API errors of certain kinds to semantic errors.
+
+*** Code Structure
+
+**** Files/Modules
+
+~main.rs~ should only ever be an orchestrater.  Create sibling files for
+associated functionality and have ~main.rs~ delegate to them.
+
+Delegate out some obvious stuff, like ~cli.rs~ for command line argument
+declaration, ~config.rs~ for configuration related things, and ~logging.rs~ for
+logging related initialization.  It's okay if these wind up just being a single
+structure and single function.
+
+**** Chains, Local Variables, and Tap
+
+Local variables should be generally frowned upon unless Rust specifically
+requires it (for scope/ownership reasons), or there are multiple uses from a
+function call.
+
+You can further avoid local variables by using the ~tap~ crate to do logging in
+the middle of a call chain without breaking the chain.
+
+Another way to avoid local variables is to create structs atomically with
+various function calls to gather data.  The ~foo~ field can be assigned the
+result of the ~foo()~ call, for example.  The naming of the value is preferable
+to a "verb" version, since verbs are highly subjective, but nouns are generally
+not in software space.  Thus ~get_foo()~ is not as preferable as ~foo()~.
+
+You should prefer functional combinators where possible over ~loop~ and ~return~
+type semantics.  If functions become complicated, simplify by breaking them into
+smaller functions.
+
+*** Debugging
+
+When lacking information during debugging, permanent additions to the logs (with
+appropriate levels) is one of the best cures.  The program should tell you what
+ails it.
+
+Create tests which exercise the problem you're running into.  Prefer mock
+services with integration tests so we can test real things, over unit tests
+which test contrived situations.
+
+Tests and test scripts should exit with a proper error code.
+
+Do not swallow errors.  Let them propagate.
+
+
+*** Types as Validation
+
+Instead of trying to build up a struct and making all of its fields optional,
+instead only use ~Option~ if the fields truly are optional.  If a struct would
+be invalid without that field set, then do not use ~Option~.  However, you can
+make an intermediate type that declares a sort of candidate whose validity is
+not fully understood.  This can be very helpful for phases of things.  For
+example, you could have a ~CliArgs~ type which represents the arguments as they
+are provided by the CLI.  You can also have a ~ConfigFile~ type which represents
+the configuration file's state.  Then you mesh the two structures together for a
+~Config~ that represents a completely valid configuration.
