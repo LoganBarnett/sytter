@@ -1,15 +1,14 @@
 use crate::{
-  error::AppError,
+  error::AppError, macos::device::device_connection_listen_start,
   trigger::Trigger,
-  macos::device::device_connection_listen_start,
 };
-use tracing::*;
 use serde::{Deserialize, Serialize};
 use std::any::type_name;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, SyncSender};
 use strum_macros::EnumString;
 use toml::Table;
+use tracing::*;
 
 #[derive(Clone, Debug, Deserialize, EnumString, PartialEq, Serialize)]
 pub enum DeviceConnectionEvent {
@@ -37,33 +36,30 @@ pub fn device_connection_toml_deserialize(
   section_data: &Table,
 ) -> Result<Box<dyn Trigger>, AppError> {
   Ok(Box::new(DeviceConnectionTrigger {
-    events:
-      section_data
-        .get("events")
-        .ok_or(AppError::DeviceConnectionEventsMissingError())
-        .and_then(|candidate| {
-          candidate
-            .as_array()
-            .ok_or(AppError::DeviceConnectionEventsParseError())
-        })
-        .and_then(|vec| {
-          vec
-            .into_iter()
-            .map(|s| {
-              s
-                .as_str()
-                .ok_or(AppError::DeviceConnectionEventParseError())
-                .map(|s| s.to_owned())
-                .and_then(device_connection_event_deserialize)
-            })
-            .collect::<Result<Vec<DeviceConnectionEvent>, AppError>>()
-        })?
+    events: section_data
+      .get("events")
+      .ok_or(AppError::DeviceConnectionEventsMissingError())
+      .and_then(|candidate| {
+        candidate
+          .as_array()
+          .ok_or(AppError::DeviceConnectionEventsParseError())
+      })
+      .and_then(|vec| {
+        vec
+          .into_iter()
+          .map(|s| {
+            s.as_str()
+              .ok_or(AppError::DeviceConnectionEventParseError())
+              .map(|s| s.to_owned())
+              .and_then(device_connection_event_deserialize)
+          })
+          .collect::<Result<Vec<DeviceConnectionEvent>, AppError>>()
+      })?,
   }))
 }
 
 #[typetag::serde]
 impl Trigger for DeviceConnectionTrigger {
-
   fn trigger_await(
     &mut self,
     send_to_sytter: SyncSender<String>,
@@ -75,8 +71,8 @@ impl Trigger for DeviceConnectionTrigger {
       let events = self.events.clone();
       // TODO: Connect plumbing such that any trigger can be shut down via
       // a cleanup function that is returned when listening.
-      let _cleanup_fn =
-        device_connection_listen_start(Box::new(move |p: DeviceConnectionEvent| {
+      let _cleanup_fn = device_connection_listen_start(Box::new(
+        move |p: DeviceConnectionEvent| {
           trace!(
             "Signaling sytter from {} for event {:?}.",
             type_name::<DeviceConnectionTrigger>(),
@@ -102,7 +98,8 @@ impl Trigger for DeviceConnectionTrigger {
               events,
             );
           }
-        }))?;
+        },
+      ))?;
       trace!("Setup listener for device connection events.");
       // None of this is called at the right time. trigger_await is async so we
       // can make the setup happen on its own thread. In the case of
@@ -118,5 +115,4 @@ impl Trigger for DeviceConnectionTrigger {
     }
     Ok(())
   }
-
 }

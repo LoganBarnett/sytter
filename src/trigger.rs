@@ -3,9 +3,7 @@ use core::fmt::Debug;
 use std::sync::mpsc::{Receiver, SyncSender};
 
 #[typetag::serde(tag = "type")]
-pub trait Trigger:
-  Debug + Sync + Send
-{
+pub trait Trigger: Debug + Sync + Send {
   fn trigger_await(
     &mut self,
     send_to_sytter: SyncSender<String>,

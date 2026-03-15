@@ -71,6 +71,9 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-journald = "0.3"
 
+[dev-dependencies]
+cargo-husky = { version = "1", default-features = false, features = ["user-hooks"] }
+
 [workspace]
 members = [
   "lib/macos-bindings"

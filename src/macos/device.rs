@@ -5,40 +5,34 @@
  * https://github.com/opensource-apple/IOUSBFamily/blob/master/Examples/Another%20USB%20Notification%20Example/USBNotificationExample.c
  */
 use crate::{
-  contrib::device::{
-    DeviceConnectionEvent,
-  },
+  contrib::device::DeviceConnectionEvent,
   error::AppError,
   macos::{
-    event::{
-      listen_start,
-      CallbackData,
-      ListenResult,
-    },
+    event::{listen_start, CallbackData, ListenResult},
     // native::dict_set_i32,
   },
 };
+use std::{
+  // any::Any,
+  ffi::c_void,
+};
 use sytter_macos_bindings::{
-  // HRESULT,
-  // IOCFPlugInInterface,
-  IONotificationPortRef,
-  IOServiceAddMatchingNotification,
-  IOServiceMatching,
-  io_object_t,
   // io_service_t,
   io_iterator_t,
+  io_object_t,
   kIOFirstMatchNotification,
   kIOUSBDeviceClassName,
   // kUSBProductID,
   // kUSBVendorID,
   // kern_return_t,
   // NSDictionary,
+  // HRESULT,
+  // IOCFPlugInInterface,
+  IONotificationPortRef,
+  IOServiceAddMatchingNotification,
+  IOServiceMatching,
 };
 use tracing::*;
-use std::{
-  // any::Any,
-  ffi::c_void,
-};
 
 impl CallbackData for DeviceConnectionEvent {
   // fn as_any(&self) -> &dyn Any {
@@ -72,12 +66,9 @@ pub fn device_connection_listen_start(
   let _usb_vendor: i32 = 0;
   let _usb_product: i32 = 0;
   // TODO: Check if we actually got one back.  The value will be 0 if not.
-  let matching = unsafe {
-    IOServiceMatching(kIOUSBDeviceClassName.as_ptr() as *mut i8)
-  };
-  unsafe {
-    trace!("Found service: {:?}", *matching)
-  };
+  let matching =
+    unsafe { IOServiceMatching(kIOUSBDeviceClassName.as_ptr() as *mut i8) };
+  unsafe { trace!("Found service: {:?}", *matching) };
   // dict_set_i32(
   //   matching,
   //   kUSBVendorID.as_ptr() as *mut c_void,
@@ -91,23 +82,24 @@ pub fn device_connection_listen_start(
   let matching_for_listen = matching.clone();
   let stop_callback = listen_start(
     Box::new(
-      move |notifier: &mut io_object_t, port_ref: &mut IONotificationPortRef, refcon: &mut usize|
-        unsafe {
-          ListenResult::kern_return_t(IOServiceAddMatchingNotification(
-            *port_ref,
-            // Some fixed and available filter.
-            kIOFirstMatchNotification.as_ptr() as *mut i8,
-            matching_for_listen,
-            Option::Some(device_connection_callback),
-            // This is tossed back to the callback, so we know which instance of
-            // the callback was invoked.
-            *refcon as *mut c_void,
-            // This is an io_object_t but an io_iterator_t is expected.  Why
-            // does it work?  Probably because they are backed by the same
-            // underlying type.
-            notifier,
-          ))
-        }
+      move |notifier: &mut io_object_t,
+            port_ref: &mut IONotificationPortRef,
+            refcon: &mut usize| unsafe {
+        ListenResult::kern_return_t(IOServiceAddMatchingNotification(
+          *port_ref,
+          // Some fixed and available filter.
+          kIOFirstMatchNotification.as_ptr() as *mut i8,
+          matching_for_listen,
+          Option::Some(device_connection_callback),
+          // This is tossed back to the callback, so we know which instance of
+          // the callback was invoked.
+          *refcon as *mut c_void,
+          // This is an io_object_t but an io_iterator_t is expected.  Why
+          // does it work?  Probably because they are backed by the same
+          // underlying type.
+          notifier,
+        ))
+      },
     ),
     callback,
   )?;
