@@ -133,6 +133,14 @@ in {
     };
   };
   config = lib.mkIf cfg.enable {
+    # launchd does not create the parent directory of StandardOutPath, and a
+    # user LaunchAgent runs as the console user (not root), so create the
+    # data/log directory and hand ownership to that user — otherwise the
+    # agent's stdout/stderr have nowhere to go.
+    system.activationScripts.sytter.text = ''
+      mkdir -p ${cfg.data-path}
+      chown ${config.system.primaryUser} ${cfg.data-path}
+    '';
     launchd.user.agents.sytter = let
       sytters-pkg = pkgs.linkFarm "sytter-configs" (
         lib.mapAttrsToList (name: sytter: {
@@ -141,17 +149,20 @@ in {
         }) cfg.sytters
       );
     in {
-      command = "${pkgs.sytter}/bin/sytter";
+      # Pass the config path and log level as CLI flags.  The binary reads
+      # only --sytters-path / --log-level; it ignores the SYTTERS_PATH and
+      # SYTTER_VERBOSITY env vars, so without these it falls back to its
+      # default ~/.config/sytter/sytters (which does not exist) and panics.
+      command =
+        "${pkgs.sytter}/bin/sytter"
+        + " --sytters-path ${sytters-pkg}"
+        + " --log-level ${cfg.log-level}";
       serviceConfig = {
         KeepAlive = true;
         RunAtLoad = true;
         ProcessType = "Standard";
         StandardOutPath = cfg.log-file;
         StandardErrorPath = cfg.log-file;
-        EnvironmentVariables = {
-          SYTTERS_PATH = "${sytters-pkg}";
-          SYTTER_VERBOSITY = cfg.log-level;
-        };
       };
     };
   };
