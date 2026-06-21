@@ -93,6 +93,16 @@ in {
       ];
     };
 
+    http-port = lib.mkOption {
+      default = 8080;
+      type = lib.types.port;
+      description = ''
+        Port for Sytter's internal HTTP/IPC server.  Override it when the
+        default collides with another service on the host (Sytter exits if it
+        cannot bind).
+      '';
+    };
+
     sytters = lib.mkOption {
       default = { };
       description = ''
@@ -136,8 +146,10 @@ in {
     # launchd does not create the parent directory of StandardOutPath, and a
     # user LaunchAgent runs as the console user (not root), so create the
     # data/log directory and hand ownership to that user — otherwise the
-    # agent's stdout/stderr have nowhere to go.
-    system.activationScripts.sytter.text = ''
+    # agent's stdout/stderr have nowhere to go.  postActivation is used because
+    # nix-darwin only runs its known activation phases, not arbitrarily-named
+    # entries.
+    system.activationScripts.postActivation.text = lib.mkAfter ''
       mkdir -p ${cfg.data-path}
       chown ${config.system.primaryUser} ${cfg.data-path}
     '';
@@ -163,6 +175,10 @@ in {
         ProcessType = "Standard";
         StandardOutPath = cfg.log-file;
         StandardErrorPath = cfg.log-file;
+        EnvironmentVariables = {
+          # The binary reads the HTTP port only from this (lowercase) env var.
+          sytter_http_port = toString cfg.http-port;
+        };
       };
     };
   };
